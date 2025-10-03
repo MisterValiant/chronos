@@ -176,36 +176,42 @@
       if(lastSync){ syncEl.innerHTML = '<span class="dot-sm on"></span> Cloud saved ' + hhmm(lastSync); return; }
       syncEl.innerHTML = '<span class="dot-sm"></span> Connected';
     }
-    async function cloudLoad(){ const u = auth.currentUser; if(!u) return null; const ref = db.collection('dashboards').doc(u.uid); const doc = await ref.get(); return doc.exists ? (doc.data().items || null) : null; }
-    async function cloudSave(items){ const u = auth.currentUser; if(!u){ updateSyncUI(); return; }
-      // Sanitize payload to match strict rules (only allowed keys/types)
-      function sanitizeItems(list){
-        if(!Array.isArray(list)) return [];
-        return list.map(it=>({
-          name: String(it?.name ?? '').slice(0,200),
-          due:  String(it?.due ?? ''),
-          ...(it?.start ? { start: String(it.start) } : {}),
-          ...(typeof it?.completed === 'boolean' ? { completed: it.completed } : {})
-        })).filter(it=>it.name && it.due);
-      }
-      async function ensureOwnerDoc(){
-        try{ await db.collection('dashboards').doc(u.uid).set({ owner: u.uid, items: [] }, { merge: true }); }
-        catch(e){ /* ignore; used only for rule sets that require owner */ }
-      }
+
+    async function cloudLoad(){
+      const u = auth.currentUser;
+      if(!u) return null;
+      const ref = db.collection('dashboards').doc(u.uid);
+      const doc = await ref.get();
+      return doc.exists ? (doc.data().items || null) : null;
+    }
+
+    // Sanitize payload to match strict rules (only allowed keys/types)
+    function sanitizeItems(list){
+      if(!Array.isArray(list)) return [];
+      return list.map(it=>({
+        name: String(it?.name ?? '').slice(0,200),
+        due:  String(it?.due ?? ''),
+        ...(it?.start ? { start: String(it.start) } : {}),
+        ...(typeof it?.completed === 'boolean' ? { completed: it.completed } : {})
+      })).filter(it=>it.name && it.due);
+    }
+
+    async function cloudSave(items){
+      const u = auth.currentUser;
+      if(!u){ updateSyncUI(); return; }
       const safe = sanitizeItems(items);
       try{
         syncing = true; syncError = null; updateSyncUI();
         await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true });
         lastSync = Date.now();
       }catch(e){
-        // If rules require an `owner` field or the doc doesn't exist with correct shape, try to create it then retry
-        if(e?.code === 'permission-denied'){
-          try{ await ensureOwnerDoc(); await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true }); lastSync = Date.now(); }
-          catch(e2){ syncError = e2; console.warn('Cloud save failed', e2.code, e2.message, e2); }
-        } else { syncError = e; console.warn('Cloud save failed', e.code, e.message, e); }
+        // Match strict rules: only { items } on create/update
+        syncError = e;
+        console.warn('Cloud save failed', e.code, e.message, e);
       }
       finally{ syncing = false; updateSyncUI(); }
     }
+
     function showUser(u){
       const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
       const avatar = u && u.photoURL ? `<img class="avatar" src="${u.photoURL}" alt=""/>` : '';
@@ -339,18 +345,7 @@
           alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
         }catch(e){
           console.error('[Diagnostics] write failed:', e.code, e.message, e);
-          if(e?.code === 'permission-denied'){
-            try{
-              await db.collection('dashboards').doc(u.uid).set({ owner: u.uid, items: [] }, { merge: true });
-              await db.collection('dashboards').doc(u.uid).set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
-              alert('Diagnostic: created owner doc and write succeeded on retry.');
-            }catch(e2){
-              console.error('[Diagnostics] retry failed:', e2.code, e2.message, e2);
-              alert('Diagnostic write failed: ' + e2.code + '\n' + e2.message + '\nCheck Firestore rules.');
-            }
-          } else {
-            alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nSee console for details.');
-          }
+          alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nCheck Firestore rules.');
         }
       });
     }
@@ -360,6 +355,7 @@
       try{
         // parts in seconds vs ms
         const p1 = parts(1000); console.assert(typeof p1.d === 'number', 'parts returns numbers');
+        const p0 = parts(0); console.assert(p0.d===0 && p0.h===0 && p0.m===0 && p0.x===0, 'parts zero');
         const pNeg = parts(-1500); console.assert(pNeg.x === 1 || pNeg.x === 2, 'parts handles negatives');
         // color thresholds
         console.assert(color(-1)==='var(--danger)', 'color overdue');
@@ -374,6 +370,11 @@
         console.assert(pct(0,100,0)===0, 'pct start');
         console.assert(pct(0,100,150)===100, 'pct cap end');
         console.assert(pct(null,100,50)===null && pct(0,null,50)===null, 'pct null when missing endpoints');
+        // hint pluralization
+        console.assert(hint({d:1,h:0,m:0,x:0}).includes('1 day'), 'hint day singular');
+        console.assert(hint({d:0,h:1,m:0,x:0}).includes('1 hour'), 'hint hour singular');
+        console.assert(hint({d:0,h:0,m:1,x:0}).includes('1 min'), 'hint minute singular');
+        console.assert(hint({d:0,h:0,m:0,x:1}).includes('1 sec'), 'hint second singular');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
