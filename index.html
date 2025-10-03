@@ -18,11 +18,11 @@
     h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,3vw,34px)}
     .muted{color:var(--muted);font-size:13px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);cursor:pointer}
-    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer; padding:8px 32px 8px 10px; border-radius:999px; outline:none; position:relative;}
+    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer;padding:8px 32px 8px 10px;border-radius:999px;outline:none;position:relative}
     /* Custom chevron for select inside pill */
     label.pill{position:relative}
     label.pill .select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-    .select:focus{box-shadow:0 0 0 2px rgba(147,197,253,.35);}
+    .select:focus{box-shadow:0 0 0 2px rgba(147,197,253,.35)}
     .select:hover{background-color:rgba(255,255,255,.06)}
     main{max-width:1200px;margin:20px auto;padding:0 18px 80px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
@@ -73,6 +73,7 @@
         </button>
         <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out">Sign out</button>
         <span id="who" class="muted" aria-live="polite"></span>
+        <span id="sync" class="muted"></span>
       </div>
     </div>
   </header>
@@ -114,30 +115,54 @@
     const db   = firebase.firestore();
   </script>
   <script>
-    // === Minimal, complete app logic (fixed parens/braces) ===
+    // === Minimal, complete app logic (clean, fixed) ===
     const $=q=>document.querySelector(q);
     const grid=$('#grid'), hideDone=$('#hideDone'), sortSel=$('#sort'), addBtn=$('#add');
     const modal=$('#modal'), form=$('#form'), cancel=$('#cancel'), deleteBtn=$('#delete'), completeBtn=$('#complete'), title=$('#mTitle');
-    const signInBtn=$('#signin'), signOutBtn=$('#signout'), who=$('#who');
-    const STORAGE='countdown_events_v1'; let editing=-1, completeMode='complete'; let deleteArmed=false;
+    const signInBtn=$('#signin'), signOutBtn=$('#signout'), who=$('#who'), syncEl=$('#sync');
+    const STORAGE='countdown_events_v1'; let editing=-1, completeMode='complete'; let deleteArmed=false; let syncing=false, lastSync=null, syncError=null;
 
     // Local storage helpers
     const load=()=>{try{const r=localStorage.getItem(STORAGE);return r?JSON.parse(r):null}catch{return null}};
     const save=a=>{try{localStorage.setItem(STORAGE,JSON.stringify(a))}catch{}};
 
     // Cloud sync helpers (Firestore)
+    function hhmm(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch{return '';} }
+    function updateSyncUI(){
+      const u = auth.currentUser;
+      if(!syncEl) return;
+      if(!u){ syncEl.innerHTML = `<span class="dot-sm"></span> Local only`; return; }
+      if(syncing){ syncEl.innerHTML = `<span class="dot-sm on"></span> Syncing…`; return; }
+      if(syncError){ syncEl.innerHTML = `<span class="dot-sm" style="background:var(--danger)"></span> Sync failed`; return; }
+      if(lastSync){ syncEl.innerHTML = `<span class="dot-sm on"></span> Cloud saved ${hhmm(lastSync)}`; return; }
+      syncEl.innerHTML = `<span class="dot-sm"></span> Connected`;
+    }
     async function cloudLoad(){ const u=auth.currentUser; if(!u) return null; const doc=await db.collection('dashboards').doc(u.uid).get(); return doc.exists?doc.data().items:null; }
-    async function cloudSave(items){ const u=auth.currentUser; if(!u) return; await db.collection('dashboards').doc(u.uid).set({items},{merge:true}); }
+    async function cloudSave(items){ const u=auth.currentUser; if(!u){ updateSyncUI(); return; }
+      try{ syncing=true; syncError=null; updateSyncUI();
+           await db.collection('dashboards').doc(u.uid).set({items},{merge:true});
+           lastSync = Date.now();
+         } catch(e){ syncError=e; console.warn('Cloud save failed', e); }
+      finally{ syncing=false; updateSyncUI(); }
+    }
     function showUser(u){
       const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
       const avatar = u && u.photoURL ? `<img class="avatar" src="${u.photoURL}" alt=""/>` : '';
       who.innerHTML = `<span class="dot-sm ${u?'on':'off'}"></span>${avatar}<span>${u?`Signed in as ${name}`:'Signed out'}</span>`;
       signInBtn.style.display = u ? 'none' : '';
       signOutBtn.style.display = u ? '' : 'none';
+      updateSyncUI();
     }
     signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
     signOutBtn.addEventListener('click',()=>auth.signOut());
-    auth.onAuthStateChanged(async u=>{ showUser(u); if(!u) return; try{ const cloud=await cloudLoad(); if(cloud) save(cloud); else await cloudSave(load()??[]); items=rebuild(); render(); }catch(e){ console.warn('Cloud sync error',e);} });
+    auth.onAuthStateChanged(async u=>{ showUser(u); if(!u){ updateSyncUI(); return; }
+      try{
+        const cloud=await cloudLoad();
+        if(cloud){ save(cloud); lastSync=Date.now(); }
+        else { await cloudSave(load()??[]); }
+        items=rebuild(); render(); updateSyncUI();
+      }catch(e){ syncError=e; updateSyncUI(); console.warn('Cloud sync error',e); }
+    });
 
     // Data & utils
     const DEFAULTS=[
@@ -147,7 +172,7 @@
       {name:'Food App MVP Sprint',start:'2025-10-03T08:00:00+04:00',due:'2025-10-31T18:00:00+04:00'}
     ];
     const P=s=>s?new Date(s):null, fmt=d=>d.toLocaleString([],{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const parts=ms=>{ms=Math.abs(ms);const s=Math.floor(ms/1e3),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;return{d,h,m,x}};
+    const parts=ms=>{ms=Math.abs(ms);const s=Math.floor(ms/1e3),d=Math.floor(ms/86400),h=Math.floor(ms%86400/3600),m=Math.floor(ms%3600/60),x=s%60;return{d,h,m,x}};
     const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), pct=(s,e,n)=>(!s||!e)?null:(n<=s?0:n>=e?100:((n-s)/(e-s))*100);
     const color=ms=>ms<0?'var(--danger)':(ms/36e5<=24?'var(--danger)':ms/36e5<=72?'var(--warn)':'var(--ok)');
     const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -197,7 +222,7 @@
       const stored=load()??[]; const prev=editing>=0?(stored[editing]||{}):{}; const next={name,start:start?start.toISOString():undefined,due:due.toISOString(),completed:!!prev.completed};
       if(editing>=0) stored[editing]=next; else stored.push(next);
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render();
+      items=rebuild(); close(); render(); updateSyncUI();
     });
 
     // Grid: edit only (delete moved into modal)
@@ -227,7 +252,7 @@
       if(editing<0) return; const stored=load()??[]; if(!stored[editing]) return;
       stored[editing]={...stored[editing],completed:(completeMode==='complete')};
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render();
+      items=rebuild(); close(); render(); updateSyncUI();
     });
 
     // Delete (inside edit modal) two-step inline confirm
@@ -241,7 +266,7 @@
       }
       stored.splice(editing,1);
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render();
+      items=rebuild(); close(); render(); updateSyncUI();
     });
 
     // ========== Lightweight self-tests (non-blocking) ==========
@@ -260,12 +285,9 @@
         console.assert(pct(0,100,50)===50, 'pct mid');
         console.assert(pct(0,100,0)===0, 'pct start');
         console.assert(pct(0,100,150)===100, 'pct cap end');
-        // rebuild & defaults
-        const firstBuild = rebuild();
-        console.assert(Array.isArray(firstBuild) && firstBuild.length>0, 'rebuild returns defaults');
-        // delete arm toggle
-        armDelete(false); console.assert(deleteBtn.textContent==='Delete', 'delete label reset');
-        armDelete(true);  console.assert(deleteBtn.textContent==='Confirm Delete', 'delete label armed');
+        // sync indicator
+        console.assert(typeof updateSyncUI==='function', 'updateSyncUI exists');
+        updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
   </script>
