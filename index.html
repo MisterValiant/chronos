@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Countdown Dashboard</title>
-  <!-- Favicon: gradient clock glyph -->
+  <!-- Favicon: gradient clock glyph (encoded SVG) -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%236ee7b7'/%3E%3Cstop offset='1' stop-color='%2393c5fd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M32 16v16l10 6' stroke='%23081022' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,7 +19,6 @@
     .muted{color:var(--muted);font-size:13px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);cursor:pointer}
     .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer;padding:8px 32px 8px 10px;border-radius:999px;outline:none;position:relative}
-    /* Custom chevron for select inside pill */
     label.pill{position:relative}
     label.pill .select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
     .select:focus{box-shadow:0 0 0 2px rgba(147,197,253,.35)}
@@ -66,7 +65,7 @@
       <div class="rowline" style="margin-top:10px">
         <label class="pill" style="cursor:pointer"><input type="checkbox" id="hideDone" checked style="margin-right:8px">Hide completed</label>
         <label class="pill">Sort <select id="sort" class="select"><option value="soon">Soonest</option><option value="name">A→Z</option></select></label>
-        <button id="add" class="pill" style="color:white">➕ Add</button>
+        <button id="add" class="pill" style="color:white">+ Add</button>
         <button id="signin" class="pill signin-btn" type="button" aria-label="Sign in">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFCA28"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           Sign in
@@ -74,6 +73,7 @@
         <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out">Sign out</button>
         <span id="who" class="muted" aria-live="polite"></span>
         <span id="sync" class="muted"></span>
+        <button id="diag" class="pill" type="button" aria-label="Run diagnostics">Diagnostics</button>
       </div>
     </div>
   </header>
@@ -97,53 +97,90 @@
     </div>
   </div>
 
-  <div class="foot"><a href='https://www.youtube.com/@MisterValiant' target='_blank' style='color:white;text-decoration:none'>Made with ❤ by MisterValiant</a></div>
+  <div class="foot"><a href="https://www.youtube.com/@MisterValiant" target="_blank" style="color:white;text-decoration:none">Made with ❤ by MisterValiant</a></div>
 
   <!-- Firebase (compat SDKs for static sites) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" defer></script>
   <script>
+  "use strict";
+  // Wait for DOM and Firebase SDKs to be ready
+  document.addEventListener('DOMContentLoaded', function(){
+    // Guard: Firebase globals must exist
+    if(!(window.firebase && firebase.initializeApp)){
+      console.error('Firebase SDK not loaded');
+      return;
+    }
+
     const firebaseConfig = {
       apiKey: "AIzaSyBJka3MklP9dytlfxbjzEt572img8dJT9M",
       authDomain: "dashboard-countdown.firebaseapp.com",
       projectId: "dashboard-countdown",
       appId: "1:816435729083:web:427c28baadf9740252cf9e"
     };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db   = firebase.firestore();
-  </script>
-  <script>
-    // === Minimal, complete app logic (clean, fixed) ===
-    const $=q=>document.querySelector(q);
-    const grid=$('#grid'), hideDone=$('#hideDone'), sortSel=$('#sort'), addBtn=$('#add');
-    const modal=$('#modal'), form=$('#form'), cancel=$('#cancel'), deleteBtn=$('#delete'), completeBtn=$('#complete'), title=$('#mTitle');
-    const signInBtn=$('#signin'), signOutBtn=$('#signout'), who=$('#who'), syncEl=$('#sync');
-    const STORAGE='countdown_events_v1'; let editing=-1, completeMode='complete'; let deleteArmed=false; let syncing=false, lastSync=null, syncError=null;
+    try { db.settings({ experimentalAutoDetectLongPolling: true, useFetchStreams: false }); } catch(_) {}
+
+    // ===== Helpers =====
+    const $ = (q) => document.querySelector(q);
+    const grid = $('#grid'), hideDone = $('#hideDone'), sortSel = $('#sort'), addBtn = $('#add');
+    const modal = $('#modal'), form = $('#form'), cancel = $('#cancel'), deleteBtn = $('#delete'), completeBtn = $('#complete'), title = $('#mTitle');
+    const signInBtn = $('#signin'), signOutBtn = $('#signout'), who = $('#who'), syncEl = $('#sync');
+    const diagBtn = $('#diag');
+
+    const STORAGE = 'countdown_events_v1';
+    let editing = -1, completeMode = 'complete';
+    let deleteArmed = false; let syncing = false, lastSync = null, syncError = null;
 
     // Local storage helpers
-    const load=()=>{try{const r=localStorage.getItem(STORAGE);return r?JSON.parse(r):null}catch{return null}};
-    const save=a=>{try{localStorage.setItem(STORAGE,JSON.stringify(a))}catch{}};
+    const load = () => { try { const r = localStorage.getItem(STORAGE); return r ? JSON.parse(r) : null; } catch(_) { return null; } };
+    const save = (a) => { try { localStorage.setItem(STORAGE, JSON.stringify(a)); } catch(_) {} };
+
+    // Formatters
+    const P = (s) => s ? new Date(s) : null;
+    const fmt = (d) => d.toLocaleString([], {year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+    const clamp = (n,a,b) => Math.max(a, Math.min(b,n));
+    const pct = (s,e,n) => (!s||!e) ? null : (n<=s?0 : (n>=e?100 : ((n-s)/(e-s))*100));
+    const color = (ms) => ms < 0 ? 'var(--danger)' : (ms/36e5<=24 ? 'var(--danger)' : ms/36e5<=72 ? 'var(--warn)' : 'var(--ok)');
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+
+    // Split milliseconds into d/h/m/s (absolute, no sign)
+    const parts = (ms) => {
+      ms = Math.abs(ms);
+      const s = Math.floor(ms / 1000);
+      const d = Math.floor(s / 86400);
+      const h = Math.floor((s % 86400) / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const x = s % 60;
+      return { d, h, m, x };
+    };
+
+    const hint = (p) => p.d ? `${p.d} day${p.d === 1 ? '' : 's'} left` : p.h ? `${p.h} hour${p.h === 1 ? '' : 's'} left` : p.m ? `${p.m} min${p.m === 1 ? '' : 's'} left` : `${p.x} sec${p.x === 1 ? '' : 's'} left`;
+    const toLocal = (iso) => { const d = new Date(iso); const z = (n)=>String(n).padStart(2,'0'); return isNaN(d) ? '' : `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
 
     // Cloud sync helpers (Firestore)
-    function hhmm(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch{return '';} }
+    function hhmm(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch(_){return '';} }
     function updateSyncUI(){
       const u = auth.currentUser;
       if(!syncEl) return;
-      if(!u){ syncEl.innerHTML = `<span class="dot-sm"></span> Local only`; return; }
-      if(syncing){ syncEl.innerHTML = `<span class="dot-sm on"></span> Syncing…`; return; }
-      if(syncError){ syncEl.innerHTML = `<span class="dot-sm" style="background:var(--danger)"></span> Sync failed`; return; }
-      if(lastSync){ syncEl.innerHTML = `<span class="dot-sm on"></span> Cloud saved ${hhmm(lastSync)}`; return; }
-      syncEl.innerHTML = `<span class="dot-sm"></span> Connected`;
+      if(!u){ syncEl.innerHTML = '<span class="dot-sm"></span> Local only'; return; }
+      if(syncing){ syncEl.innerHTML = '<span class="dot-sm on"></span> Syncing...'; return; }
+      if(syncError){ syncEl.innerHTML = '<span class="dot-sm" style="background:var(--danger)"></span> Sync failed'; return; }
+      if(lastSync){ syncEl.innerHTML = '<span class="dot-sm on"></span> Cloud saved ' + hhmm(lastSync); return; }
+      syncEl.innerHTML = '<span class="dot-sm"></span> Connected';
     }
-    async function cloudLoad(){ const u=auth.currentUser; if(!u) return null; const doc=await db.collection('dashboards').doc(u.uid).get(); return doc.exists?doc.data().items:null; }
-    async function cloudSave(items){ const u=auth.currentUser; if(!u){ updateSyncUI(); return; }
-      try{ syncing=true; syncError=null; updateSyncUI();
-           await db.collection('dashboards').doc(u.uid).set({items},{merge:true});
-           lastSync = Date.now();
-         } catch(e){ syncError=e; console.warn('Cloud save failed', e); }
-      finally{ syncing=false; updateSyncUI(); }
+    async function cloudLoad(){ const u = auth.currentUser; if(!u) return null; const doc = await db.collection('dashboards').doc(u.uid).get(); return doc.exists ? doc.data().items : null; }
+    async function cloudSave(items){ const u = auth.currentUser; if(!u){ updateSyncUI(); return; }
+      try{
+        syncing = true; syncError = null; updateSyncUI();
+        await db.collection('dashboards').doc(u.uid).set({ items }, { merge: true });
+        lastSync = Date.now();
+      }catch(e){ syncError = e; console.warn('Cloud save failed', e.code, e.message, e); }
+      finally{ syncing = false; updateSyncUI(); }
     }
     function showUser(u){
       const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
@@ -153,41 +190,33 @@
       signOutBtn.style.display = u ? '' : 'none';
       updateSyncUI();
     }
-    signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
-    signOutBtn.addEventListener('click',()=>auth.signOut());
-    auth.onAuthStateChanged(async u=>{ showUser(u); if(!u){ updateSyncUI(); return; }
-      try{
-        const cloud=await cloudLoad();
-        if(cloud){ save(cloud); lastSync=Date.now(); }
-        else { await cloudSave(load()??[]); }
-        items=rebuild(); render(); updateSyncUI();
-      }catch(e){ syncError=e; updateSyncUI(); console.warn('Cloud sync error',e); }
-    });
 
-    // Data & utils
-    const DEFAULTS=[
+    // ===== Data =====
+    const DEFAULTS = [
       {name:'Food Freshness Paper (Draft)',due:'2025-10-25T18:00:00+04:00'},
       {name:'Forest Legislation Assignment',due:'2025-10-12T23:59:00+04:00'},
       {name:'Nursery Launch Day',due:'2025-11-05T09:00:00+04:00'},
       {name:'Food App MVP Sprint',start:'2025-10-03T08:00:00+04:00',due:'2025-10-31T18:00:00+04:00'}
     ];
-    const P=s=>s?new Date(s):null, fmt=d=>d.toLocaleString([],{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-    const parts=ms=>{ms=Math.abs(ms);const s=Math.floor(ms/1e3),d=Math.floor(ms/86400),h=Math.floor(ms%86400/3600),m=Math.floor(ms%3600/60),x=s%60;return{d,h,m,x}};
-    const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), pct=(s,e,n)=>(!s||!e)?null:(n<=s?0:n>=e?100:((n-s)/(e-s))*100);
-    const color=ms=>ms<0?'var(--danger)':(ms/36e5<=24?'var(--danger)':ms/36e5<=72?'var(--warn)':'var(--ok)');
-    const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 
     function rebuild(){
-      const src=load()??DEFAULTS; return src.map((e,i)=>({idx:i,name:e.name,start:P(e.start),due:P(e.due),completed:!!e.completed})).filter(x=>x.due);
+      const src = load() ?? DEFAULTS;
+      return src.map((e,i)=>({ idx:i, name:e.name, start:P(e.start), due:P(e.due), completed:!!e.completed })).filter(x=>x.due);
     }
-    let items=rebuild();
-    const pri=(it,now)=>it.completed?2:(it.due.getTime()<now?0:1);
-    const sortItems=mode=>{const now=Date.now();items.sort((a,b)=>pri(a,now)-pri(b,now)||(mode==='name'?a.name.localeCompare(b.name):a.due-b.due))};
-    const box=(n,l)=>`<div class="chunk"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
-    const hint=p=>p.d?`${p.d} day${p.d-1?'s':''} left`:p.h?`${p.h} hour${p.h-1?'s':''} left`:p.m?`${p.m} min${p.m-1?'s':''} left`:`${p.x} sec${p.x-1?'s':''} left`;
-    const toLocal=iso=>{const d=new Date(iso);const z=n=>String(n).padStart(2,'0');return isNaN(d)?'':`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+    let items = rebuild();
 
-    function card(it,now,hide){ if(it.completed&&hide) return ''; const ms=it.due-now; const p=parts(ms); const c=color(ms); const per=pct(it.start?.getTime(),it.due.getTime(),now.getTime()); const badge=it.completed?'Completed':(ms<0?'Overdue':'Upcoming'); const status=it.completed?'Completed':(ms<0?'Overdue':hint(p));
+    const pri = (it,now) => it.completed ? 2 : (it.due.getTime() < now ? 0 : 1);
+    const sortItems = (mode) => { const now = Date.now(); items.sort((a,b)=> pri(a,now)-pri(b,now) || (mode==='name' ? a.name.localeCompare(b.name) : a.due-b.due)); };
+    const box = (n,l) => `<div class="chunk"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
+
+    function card(it, now, hide){
+      if(it.completed && hide) return '';
+      const ms = it.due - now;
+      const p = parts(ms);
+      const c = color(ms);
+      const per = pct(it.start?.getTime(), it.due.getTime(), now.getTime());
+      const badge = it.completed ? 'Completed' : (ms < 0 ? 'Overdue' : 'Upcoming');
+      const status = it.completed ? 'Completed' : (ms < 0 ? 'Overdue' : hint(p));
       return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
         <div class="badge">${badge}</div>
         <div class="actions"><button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button></div>
@@ -195,51 +224,59 @@
         <div class="deadline">Due: ${fmt(it.due)}</div>
         <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
         <div class="status"><span class="dot" style="background:${c}"></span>${status}</div>
-        ${per==null?'':`<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
+        ${per==null ? '' : `<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
       </article>`;
     }
-    function render(){ const now=new Date(); sortItems(sortSel.value); grid.innerHTML=items.map(i=>card(i,now,hideDone.checked)).join(''); }
-    render(); setInterval(render,1000);
+
+    function render(){ const now = new Date(); sortItems(sortSel.value); grid.innerHTML = items.map(i=>card(i,now,hideDone.checked)).join(''); }
+
+    // First render, then tick every second
+    render(); setInterval(render, 1000);
+
     // Seed defaults on first run
-    if(!load()) save(items.map(i=>({name:i.name,start:i.start?.toISOString?.(),due:i.due?.toISOString?.(),completed:false})));
+    if(!load()) save(items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:false })));
 
-    // Modal controls
-    const open=(t)=>{ title.textContent=t; modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fName').focus(),0) };
-    const close=()=>{ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); form.reset(); editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; deleteArmed=false; deleteBtn.textContent='Delete'; };
+    // ===== Modal controls =====
+    const open = (t) => { title.textContent = t; modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fName').focus(), 0); };
+    const close = () => { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); form.reset(); editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; deleteArmed=false; deleteBtn.textContent='Delete'; };
 
-    // UI listeners
+    // ===== UI listeners =====
     ['change','input'].forEach(ev=>{ hideDone.addEventListener(ev,render); sortSel.addEventListener(ev,render); });
     addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; open('Add a deadline'); });
     cancel.addEventListener('click',close);
     modal.addEventListener('click',e=>{ if(e.target===modal) close(); });
-    window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&modal.classList.contains('show')) close(); });
+    window.addEventListener('keydown',e=>{ if(e.key==='Escape' && modal.classList.contains('show')) close(); });
 
     // Form submit (save)
     form.addEventListener('submit',e=>{
       e.preventDefault();
-      const name=form.name.value?.trim(); const due=form.due.value?new Date(form.due.value):null; const start=form.start.value?new Date(form.start.value):null;
-      if(!name||!due||isNaN(due)) return alert('Enter a valid name and due date/time.');
-      const stored=load()??[]; const prev=editing>=0?(stored[editing]||{}):{}; const next={name,start:start?start.toISOString():undefined,due:due.toISOString(),completed:!!prev.completed};
-      if(editing>=0) stored[editing]=next; else stored.push(next);
+      const name = form.name.value ? form.name.value.trim() : '';
+      const due = form.due.value ? new Date(form.due.value) : null;
+      const start = form.start.value ? new Date(form.start.value) : null;
+      if(!name || !due || isNaN(due)) return alert('Enter a valid name and due date/time.');
+      const stored = load() ?? [];
+      const prev = editing >= 0 ? (stored[editing] || {}) : {};
+      const next = { name, start: start ? start.toISOString() : undefined, due: due.toISOString(), completed: !!prev.completed };
+      if(editing >= 0) stored[editing] = next; else stored.push(next);
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render(); updateSyncUI();
+      items = rebuild(); close(); render(); updateSyncUI();
     });
 
-    // Grid: edit only (delete moved into modal)
+    // Grid: edit only
     grid.addEventListener('click',e=>{
-      const btn=e.target.closest('button');
+      const btn = e.target.closest('button');
       if(!btn) return;
       e.preventDefault(); e.stopPropagation();
-      const cardEl=btn.closest('.card');
-      const idx=Number(cardEl?.dataset.idx);
-      const stored=load()??[];
+      const cardEl = btn.closest('.card');
+      const idx = Number(cardEl?.dataset.idx);
+      const stored = load() ?? [];
       if(!Number.isFinite(idx) || idx<0 || idx>=stored.length) return;
       if(btn.dataset.a==='e'){
-        editing=idx; const ev=stored[idx]||{};
-        document.getElementById('fName').value=ev.name||'';
-        document.getElementById('fDue').value=ev.due?toLocal(ev.due):'';
-        document.getElementById('fStart').value=ev.start?toLocal(ev.start):'';
-        completeBtn.style.display=''; deleteBtn.style.display='';
+        editing = idx; const ev = stored[idx] || {};
+        document.getElementById('fName').value = ev.name || '';
+        document.getElementById('fDue').value = ev.due ? toLocal(ev.due) : '';
+        document.getElementById('fStart').value = ev.start ? toLocal(ev.start) : '';
+        completeBtn.style.display = ''; deleteBtn.style.display = '';
         deleteArmed=false; deleteBtn.textContent='Delete';
         if(ev.completed){ completeBtn.textContent='Undo Complete'; completeBtn.title='Mark as incomplete (keep due date)'; completeMode='undo'; }
         else { completeBtn.textContent='Complete'; completeBtn.title='Mark this task completed'; completeMode='complete'; }
@@ -249,31 +286,44 @@
 
     // Complete / Undo Complete
     completeBtn.addEventListener('click',()=>{
-      if(editing<0) return; const stored=load()??[]; if(!stored[editing]) return;
-      stored[editing]={...stored[editing],completed:(completeMode==='complete')};
+      if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
+      stored[editing] = { ...stored[editing], completed: (completeMode==='complete') };
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render(); updateSyncUI();
+      items = rebuild(); close(); render(); updateSyncUI();
     });
 
     // Delete (inside edit modal) two-step inline confirm
-    function armDelete(armed){ deleteArmed=armed; deleteBtn.textContent = armed ? 'Confirm Delete' : 'Delete'; }
+    function armDelete(armed){ deleteArmed = armed; deleteBtn.textContent = armed ? 'Confirm Delete' : 'Delete'; }
     deleteBtn.addEventListener('click',()=>{
-      if(editing<0) return; const stored=load()??[]; if(!stored[editing]) return;
-      if(!deleteArmed){
-        armDelete(true);
-        setTimeout(()=>{ if(deleteArmed) armDelete(false); }, 4000);
-        return;
-      }
+      if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
+      if(!deleteArmed){ armDelete(true); setTimeout(()=>{ if(deleteArmed) armDelete(false); }, 4000); return; }
       stored.splice(editing,1);
       save(stored); cloudSave(stored).catch(()=>{});
-      items=rebuild(); close(); render(); updateSyncUI();
+      items = rebuild(); close(); render(); updateSyncUI();
     });
 
-    // ========== Lightweight self-tests (non-blocking) ==========
+    // Diagnostics button
+    if(diagBtn){
+      diagBtn.addEventListener('click', async () => {
+        const u = auth.currentUser;
+        const env = { signedIn: !!u, uid: u?.uid || null, projectId: (firebase.app()?.options?.projectId)||null, host: location.host };
+        console.log('[Diagnostics] env:', env);
+        if(!u){ alert('Not signed in. Please sign in first.'); return; }
+        try{
+          await db.collection('dashboards').doc(u.uid)
+            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
+          alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
+        }catch(e){ console.error('[Diagnostics] write failed:', e.code, e.message, e); alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nSee console for details.'); }
+      });
+    }
+
+    // ===== Lightweight self tests =====
     (function selfTests(){
       try{
-        // core utils
-        console.assert(typeof parts(1000).d === 'number', 'parts returns numbers');
+        // parts in seconds vs ms
+        const p1 = parts(1000); console.assert(typeof p1.d === 'number', 'parts returns numbers');
+        const pNeg = parts(-1500); console.assert(pNeg.x === 1 || pNeg.x === 2, 'parts handles negatives');
+        // color thresholds
         console.assert(color(-1)==='var(--danger)', 'color overdue');
         console.assert(color(12*36e5)==='var(--danger)', 'color <=24h');
         console.assert(color(48*36e5)==='var(--warn)', 'color <=72h');
@@ -290,6 +340,19 @@
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
+
+    // Auth UI
+    signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+    signOutBtn.addEventListener('click',()=>auth.signOut());
+    auth.onAuthStateChanged(async (u)=>{ showUser(u); if(!u){ updateSyncUI(); return; }
+      try{
+        const cloud = await cloudLoad();
+        if(cloud){ save(cloud); lastSync = Date.now(); }
+        else { await cloudSave(load() ?? []); }
+        items = rebuild(); render(); updateSyncUI();
+      }catch(e){ syncError = e; updateSyncUI(); console.warn('Cloud sync error', e); }
+    });
+  });
   </script>
 </body>
 </html>
