@@ -203,13 +203,6 @@
       }
       finally{ syncing = false; updateSyncUI(); }
     }
-      try{
-        syncing = true; syncError = null; updateSyncUI();
-        await db.collection('dashboards').doc(u.uid).set({ items }, { merge: true });
-        lastSync = Date.now();
-      }catch(e){ syncError = e; console.warn('Cloud save failed', e.code, e.message, e); }
-      finally{ syncing = false; updateSyncUI(); }
-    }
     function showUser(u){
       const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
       const avatar = u && u.photoURL ? `<img class="avatar" src="${u.photoURL}" alt=""/>` : '';
@@ -350,25 +343,12 @@
               alert('Diagnostic: created owner doc and write succeeded on retry.');
             }catch(e2){
               console.error('[Diagnostics] retry failed:', e2.code, e2.message, e2);
-              alert('Diagnostic write failed: ' + e2.code + '
-' + e2.message + '
-Check Firestore rules.');
+              alert('Diagnostic write failed: ' + e2.code + '\n' + e2.message + '\nCheck Firestore rules.');
             }
           } else {
-            alert('Diagnostic write failed: ' + e.code + '
-' + e.message + '
-See console for details.');
+            alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nSee console for details.');
           }
         }
-      });
-    };
-        console.log('[Diagnostics] env:', env);
-        if(!u){ alert('Not signed in. Please sign in first.'); return; }
-        try{
-          await db.collection('dashboards').doc(u.uid)
-            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
-          alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
-        }catch(e){ console.error('[Diagnostics] write failed:', e.code, e.message, e); alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nSee console for details.'); }
       });
     }
 
@@ -390,8 +370,7 @@ See console for details.');
         console.assert(pct(0,100,50)===50, 'pct mid');
         console.assert(pct(0,100,0)===0, 'pct start');
         console.assert(pct(0,100,150)===100, 'pct cap end');
-        // sync indicator
-        console.assert(typeof updateSyncUI==='function', 'updateSyncUI exists');
+        console.assert(pct(null,100,50)===null && pct(0,null,50)===null, 'pct null when missing endpoints');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
