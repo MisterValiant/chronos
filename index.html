@@ -173,8 +173,36 @@
       if(lastSync){ syncEl.innerHTML = '<span class="dot-sm on"></span> Cloud saved ' + hhmm(lastSync); return; }
       syncEl.innerHTML = '<span class="dot-sm"></span> Connected';
     }
-    async function cloudLoad(){ const u = auth.currentUser; if(!u) return null; const doc = await db.collection('dashboards').doc(u.uid).get(); return doc.exists ? doc.data().items : null; }
+    async function cloudLoad(){ const u = auth.currentUser; if(!u) return null; const ref = db.collection('dashboards').doc(u.uid); const doc = await ref.get(); return doc.exists ? (doc.data().items || null) : null; }
     async function cloudSave(items){ const u = auth.currentUser; if(!u){ updateSyncUI(); return; }
+      // Sanitize payload to match strict rules (only allowed keys/types)
+      function sanitizeItems(list){
+        if(!Array.isArray(list)) return [];
+        return list.map(it=>({
+          name: String(it?.name ?? '').slice(0,200),
+          due:  String(it?.due ?? ''),
+          ...(it?.start ? { start: String(it.start) } : {}),
+          ...(typeof it?.completed === 'boolean' ? { completed: it.completed } : {})
+        })).filter(it=>it.name && it.due);
+      }
+      async function ensureOwnerDoc(){
+        try{ await db.collection('dashboards').doc(u.uid).set({ owner: u.uid, items: [] }, { merge: true }); }
+        catch(e){ /* ignore; used only for rule sets that require owner */ }
+      }
+      const safe = sanitizeItems(items);
+      try{
+        syncing = true; syncError = null; updateSyncUI();
+        await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true });
+        lastSync = Date.now();
+      }catch(e){
+        // If rules require an `owner` field or the doc doesn't exist with correct shape, try to create it then retry
+        if(e?.code === 'permission-denied'){
+          try{ await ensureOwnerDoc(); await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true }); lastSync = Date.now(); }
+          catch(e2){ syncError = e2; console.warn('Cloud save failed', e2.code, e2.message, e2); }
+        } else { syncError = e; console.warn('Cloud save failed', e.code, e.message, e); }
+      }
+      finally{ syncing = false; updateSyncUI(); }
+    }
       try{
         syncing = true; syncError = null; updateSyncUI();
         await db.collection('dashboards').doc(u.uid).set({ items }, { merge: true });
@@ -307,6 +335,33 @@
       diagBtn.addEventListener('click', async () => {
         const u = auth.currentUser;
         const env = { signedIn: !!u, uid: u?.uid || null, projectId: (firebase.app()?.options?.projectId)||null, host: location.host };
+        console.log('[Diagnostics] env:', env);
+        if(!u){ alert('Not signed in. Please sign in first.'); return; }
+        try{
+          await db.collection('dashboards').doc(u.uid)
+            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
+          alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
+        }catch(e){
+          console.error('[Diagnostics] write failed:', e.code, e.message, e);
+          if(e?.code === 'permission-denied'){
+            try{
+              await db.collection('dashboards').doc(u.uid).set({ owner: u.uid, items: [] }, { merge: true });
+              await db.collection('dashboards').doc(u.uid).set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
+              alert('Diagnostic: created owner doc and write succeeded on retry.');
+            }catch(e2){
+              console.error('[Diagnostics] retry failed:', e2.code, e2.message, e2);
+              alert('Diagnostic write failed: ' + e2.code + '
+' + e2.message + '
+Check Firestore rules.');
+            }
+          } else {
+            alert('Diagnostic write failed: ' + e.code + '
+' + e.message + '
+See console for details.');
+          }
+        }
+      });
+    };
         console.log('[Diagnostics] env:', env);
         if(!u){ alert('Not signed in. Please sign in first.'); return; }
         try{
