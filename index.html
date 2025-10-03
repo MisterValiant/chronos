@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Countdown Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg1:#0f1226;--bg2:#1a2040;--glass:rgba(255,255,255,.10);--txt:#e8ecff;--muted:#b7c1ff;--ok:#34d399;--warn:#f59e0b;--danger:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)}
+    *{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--txt);background:radial-gradient(1200px 800px at 10% -10%,#2a2f72 0%,transparent 60%),radial-gradient(1000px 700px at 110% 10%,#5a2a72 0%,transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
+    header{position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);background:linear-gradient(180deg,rgba(20,22,50,.75),rgba(20,22,50,.35));border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
+    .rowline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,3vw,34px)}
+    .muted{color:var(--muted);font-size:13px}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);cursor:pointer}
+    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer}
+    main{max-width:1200px;margin:20px auto;padding:0 18px 80px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .card{position:relative;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.10);box-shadow:var(--shadow);padding:16px}
+    .card.completed{opacity:.65;filter:saturate(.85)}
+    .badge{font-size:12px;letter-spacing:.3px;text-transform:uppercase;color:#dbe6ff;opacity:.9}
+    .name{margin:6px 0 10px;font-size:18px;font-weight:700}
+    .deadline{color:var(--muted);font-size:12px}
+    .timer{margin:12px 0 8px;display:flex;gap:8px;flex-wrap:wrap}
+    .chunk{min-width:64px;padding:10px;border-radius:12px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .num{display:block;font-size:22px;font-weight:800}
+    .lab{display:block;margin-top:2px;font-size:11px;color:#c7d2fe}
+    .status{margin-top:8px;font-size:12px}
+    .status .dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:6px;vertical-align:middle}
+    .progress{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}
+    .progress>span{display:block;height:100%;background:linear-gradient(90deg,#6ee7b7,#93c5fd);width:0}
+    .actions{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2}
+    .btn,.icon{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.10);color:var(--txt);padding:8px 10px;border-radius:10px;cursor:pointer}
+    .icon:hover{background:rgba(255,255,255,.16)}.danger{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35)}
+    .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,8,20,.55);backdrop-filter:blur(6px);z-index:50}
+    .modal.show{display:grid}.sheet{width:min(560px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.14);border-radius:18px;box-shadow:var(--shadow);padding:18px}
+    .f{display:grid;gap:10px}.f label{font-size:12px;color:var(--muted)}.f input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit}
+    .foot{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;border-radius:14px;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);font-size:12px}
+    .signin-btn{background:white;color:#333;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .signin-btn svg{width:16px;height:16px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="rowline">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M7 10h5M7 14h8M3 7a2 2 0 0 1 2-2h2l1-1h6l1 1h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" stroke="#b9c6ff" stroke-width="1.5" stroke-linecap="round"/><path d="M16.5 4.5V2.8m-9 1.7V2.8" stroke="#b9c6ff" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <h1>Countdown Dashboard</h1>
+      </div>
+      <div class="rowline">
+        <span class="muted">Add, edit, complete. Data stays on this device.</span>
+      </div>
+      <div class="rowline" style="margin-top:10px">
+        <label class="pill" style="cursor:pointer"><input type="checkbox" id="hideDone" checked style="margin-right:8px">Hide completed</label>
+        <label class="pill">Sort <select id="sort" class="select"><option value="soon">Soonest</option><option value="name">A→Z</option></select></label>
+        <button id="add" class="pill" style="color:white">➕ Add</button>
+        <button id="signin" class="pill signin-btn" type="button" aria-label="Sign in">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFCA28"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          Sign in
+        </button>
+        <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out">Sign out</button>
+        <span id="who" class="muted"></span>
+      </div>
+    </div>
+  </header>
+
+  <main><div id="grid" class="grid" role="list"></div></main>
+
+  <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <h3 id="mTitle" style="margin:0 0 8px">Add a deadline</h3>
+      <form id="form" class="f">
+        <label>Project name <input id="fName" name="name" required placeholder="e.g., Final Report"/></label>
+        <label>Due date/time <input id="fDue" name="due" type="datetime-local" required/></label>
+        <label>Start date/time (optional) <input id="fStart" name="start" type="datetime-local"/></label>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+          <button type="button" id="cancel" class="btn">Cancel</button>
+          <button type="button" id="delete" class="btn danger" style="border:none;display:none">Delete</button>
+          <button type="button" id="complete" class="btn">Complete</button>
+          <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="foot"><a href='https://www.youtube.com/@MisterValiant' target='_blank' style='color:white;text-decoration:none'>Made with ❤ by MisterValiant</a></div>
+
+  <!-- Firebase (compat SDKs for static sites) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJka3MklP9dytlfxbjzEt572img8dJT9M",
+      authDomain: "dashboard-countdown.firebaseapp.com",
+      projectId: "dashboard-countdown",
+      appId: "1:816435729083:web:427c28baadf9740252cf9e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.firestore();
+  </script>
+  <script>
+    // === Minimal, complete app logic (fixed parens/braces) ===
+    const $=q=>document.querySelector(q);
+    const grid=$('#grid'), hideDone=$('#hideDone'), sortSel=$('#sort'), addBtn=$('#add');
+    const modal=$('#modal'), form=$('#form'), cancel=$('#cancel'), deleteBtn=$('#delete'), completeBtn=$('#complete'), title=$('#mTitle');
+    const signInBtn=$('#signin'), signOutBtn=$('#signout'), who=$('#who');
+    const STORAGE='countdown_events_v1'; let editing=-1, completeMode='complete'; let deleteArmed=false;
+
+    // Local storage helpers
+    const load=()=>{try{const r=localStorage.getItem(STORAGE);return r?JSON.parse(r):null}catch{return null}};
+    const save=a=>{try{localStorage.setItem(STORAGE,JSON.stringify(a))}catch{}};
+
+    // Cloud sync helpers (Firestore)
+    async function cloudLoad(){ const u=auth.currentUser; if(!u) return null; const doc=await db.collection('dashboards').doc(u.uid).get(); return doc.exists?doc.data().items:null; }
+    async function cloudSave(items){ const u=auth.currentUser; if(!u) return; await db.collection('dashboards').doc(u.uid).set({items},{merge:true}); }
+    function showUser(u){ who.textContent=u?`Signed in as ${u.displayName||u.email}`:''; signInBtn.style.display=u?'none':''; signOutBtn.style.display=u?'':'none'; }
+    signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+    signOutBtn.addEventListener('click',()=>auth.signOut());
+    auth.onAuthStateChanged(async u=>{ showUser(u); if(!u) return; try{ const cloud=await cloudLoad(); if(cloud) save(cloud); else await cloudSave(load()??[]); items=rebuild(); render(); }catch(e){ console.warn('Cloud sync error',e);} });
+
+    // Data & utils
+    const DEFAULTS=[
+      {name:'Food Freshness Paper (Draft)',due:'2025-10-25T18:00:00+04:00'},
+      {name:'Forest Legislation Assignment',due:'2025-10-12T23:59:00+04:00'},
+      {name:'Nursery Launch Day',due:'2025-11-05T09:00:00+04:00'},
+      {name:'Food App MVP Sprint',start:'2025-10-03T08:00:00+04:00',due:'2025-10-31T18:00:00+04:00'}
+    ];
+    const P=s=>s?new Date(s):null, fmt=d=>d.toLocaleString([],{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const parts=ms=>{ms=Math.abs(ms);const s=Math.floor(ms/1e3),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;return{d,h,m,x}};
+    const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), pct=(s,e,n)=>(!s||!e)?null:(n<=s?0:n>=e?100:((n-s)/(e-s))*100);
+    const color=ms=>ms<0?'var(--danger)':(ms/36e5<=24?'var(--danger)':ms/36e5<=72?'var(--warn)':'var(--ok)');
+    const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+
+    function rebuild(){
+      const src=load()??DEFAULTS; return src.map((e,i)=>({idx:i,name:e.name,start:P(e.start),due:P(e.due),completed:!!e.completed})).filter(x=>x.due);
+    }
+    let items=rebuild();
+    const pri=(it,now)=>it.completed?2:(it.due.getTime()<now?0:1);
+    const sortItems=mode=>{const now=Date.now();items.sort((a,b)=>pri(a,now)-pri(b,now)||(mode==='name'?a.name.localeCompare(b.name):a.due-b.due))};
+    const box=(n,l)=>`<div class="chunk"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
+    const hint=p=>p.d?`${p.d} day${p.d-1?'s':''} left`:p.h?`${p.h} hour${p.h-1?'s':''} left`:p.m?`${p.m} min${p.m-1?'s':''} left`:`${p.x} sec${p.x-1?'s':''} left`;
+    const toLocal=iso=>{const d=new Date(iso);const z=n=>String(n).padStart(2,'0');return isNaN(d)?'':`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`};
+
+    function card(it,now,hide){ if(it.completed&&hide) return ''; const ms=it.due-now; const p=parts(ms); const c=color(ms); const per=pct(it.start?.getTime(),it.due.getTime(),now.getTime()); const badge=it.completed?'Completed':(ms<0?'Overdue':'Upcoming'); const status=it.completed?'Completed':(ms<0?'Overdue':hint(p));
+      return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
+        <div class="badge">${badge}</div>
+        <div class="actions"><button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button></div>
+        <div class="name">${esc(it.name)}</div>
+        <div class="deadline">Due: ${fmt(it.due)}</div>
+        <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
+        <div class="status"><span class="dot" style="background:${c}"></span>${status}</div>
+        ${per==null?'':`<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
+      </article>`;
+    }
+    function render(){ const now=new Date(); sortItems(sortSel.value); grid.innerHTML=items.map(i=>card(i,now,hideDone.checked)).join(''); }
+    render(); setInterval(render,1000);
+    // Seed defaults on first run
+    if(!load()) save(items.map(i=>({name:i.name,start:i.start?.toISOString?.(),due:i.due?.toISOString?.(),completed:false})));
+
+    // Modal controls
+    const open=(t)=>{ title.textContent=t; modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fName').focus(),0) };
+    const close=()=>{ modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); form.reset(); editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; deleteArmed=false; deleteBtn.textContent='Delete'; };
+
+    // UI listeners
+    ['change','input'].forEach(ev=>{ hideDone.addEventListener(ev,render); sortSel.addEventListener(ev,render); });
+    addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; open('Add a deadline'); });
+    cancel.addEventListener('click',close);
+    modal.addEventListener('click',e=>{ if(e.target===modal) close(); });
+    window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&modal.classList.contains('show')) close(); });
+
+    // Form submit (save)
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const name=form.name.value?.trim(); const due=form.due.value?new Date(form.due.value):null; const start=form.start.value?new Date(form.start.value):null;
+      if(!name||!due||isNaN(due)) return alert('Enter a valid name and due date/time.');
+      const stored=load()??[]; const prev=editing>=0?(stored[editing]||{}):{}; const next={name,start:start?start.toISOString():undefined,due:due.toISOString(),completed:!!prev.completed};
+      if(editing>=0) stored[editing]=next; else stored.push(next);
+      save(stored); cloudSave(stored).catch(()=>{});
+      items=rebuild(); close(); render();
+    });
+
+    // Grid: edit only (delete moved into modal)
+    grid.addEventListener('click',e=>{
+      const btn=e.target.closest('button');
+      if(!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      const cardEl=btn.closest('.card');
+      const idx=Number(cardEl?.dataset.idx);
+      const stored=load()??[];
+      if(!Number.isFinite(idx) || idx<0 || idx>=stored.length) return;
+      if(btn.dataset.a==='e'){
+        editing=idx; const ev=stored[idx]||{};
+        document.getElementById('fName').value=ev.name||'';
+        document.getElementById('fDue').value=ev.due?toLocal(ev.due):'';
+        document.getElementById('fStart').value=ev.start?toLocal(ev.start):'';
+        completeBtn.style.display=''; deleteBtn.style.display='';
+        deleteArmed=false; deleteBtn.textContent='Delete';
+        if(ev.completed){ completeBtn.textContent='Undo Complete'; completeBtn.title='Mark as incomplete (keep due date)'; completeMode='undo'; }
+        else { completeBtn.textContent='Complete'; completeBtn.title='Mark this task completed'; completeMode='complete'; }
+        open('Edit deadline');
+      }
+    });
+
+    // Complete / Undo Complete
+    completeBtn.addEventListener('click',()=>{
+      if(editing<0) return; const stored=load()??[]; if(!stored[editing]) return;
+      stored[editing]={...stored[editing],completed:(completeMode==='complete')};
+      save(stored); cloudSave(stored).catch(()=>{});
+      items=rebuild(); close(); render();
+    });
+
+    // Delete (inside edit modal) two-step inline confirm
+    function armDelete(armed){ deleteArmed=armed; deleteBtn.textContent = armed ? 'Confirm Delete' : 'Delete'; }
+    deleteBtn.addEventListener('click',()=>{
+      if(editing<0) return; const stored=load()??[]; if(!stored[editing]) return;
+      if(!deleteArmed){
+        armDelete(true);
+        setTimeout(()=>{ if(deleteArmed) armDelete(false); }, 4000);
+        return;
+      }
+      stored.splice(editing,1);
+      save(stored); cloudSave(stored).catch(()=>{});
+      items=rebuild(); close(); render();
+    });
+
+    // ========== Lightweight self-tests (non-blocking) ==========
+    (function selfTests(){
+      try{
+        // core utils
+        console.assert(typeof parts(1000).d === 'number', 'parts returns numbers');
+        console.assert(color(-1)==='var(--danger)', 'color overdue');
+        console.assert(color(12*36e5)==='var(--danger)', 'color <=24h');
+        console.assert(color(48*36e5)==='var(--warn)', 'color <=72h');
+        console.assert(color(100*36e5)==='var(--ok)', 'color >72h');
+        // escape
+        const escd = esc('<>&"\'');
+        console.assert(escd.includes('&lt;') && escd.includes('&gt;') && escd.includes('&amp;') && escd.includes('&quot;') && escd.includes('&#39;'), 'esc works');
+        // rebuild & defaults
+        const firstBuild = rebuild();
+        console.assert(Array.isArray(firstBuild) && firstBuild.length>0, 'rebuild returns defaults');
+        // delete arm toggle
+        armDelete(false); console.assert(deleteBtn.textContent==='Delete', 'delete label reset');
+        armDelete(true);  console.assert(deleteBtn.textContent==='Confirm Delete', 'delete label armed');
+      }catch(e){ console.warn('Self-tests warning:', e); }
+    })();
+  </script>
+</body>
+</html>
