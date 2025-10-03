@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Countdown Dashboard</title>
+  <!-- Favicon: gradient clock glyph -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%236ee7b7'/%3E%3Cstop offset='1' stop-color='%2393c5fd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='32' cy='32' r='28' fill='url(%23g)'/%3E%3Cpath d='M32 16v16l10 6' stroke='%23081022' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -16,7 +18,12 @@
     h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,3vw,34px)}
     .muted{color:var(--muted);font-size:13px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);cursor:pointer}
-    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer}
+    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer; padding:8px 32px 8px 10px; border-radius:999px; outline:none; position:relative;}
+    /* Custom chevron for select inside pill */
+    label.pill{position:relative}
+    label.pill .select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+    .select:focus{box-shadow:0 0 0 2px rgba(147,197,253,.35);}
+    .select:hover{background-color:rgba(255,255,255,.06)}
     main{max-width:1200px;margin:20px auto;padding:0 18px 80px}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
     .card{position:relative;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.10);box-shadow:var(--shadow);padding:16px}
@@ -41,6 +48,9 @@
     .foot{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;border-radius:14px;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);font-size:12px}
     .signin-btn{background:white;color:#333;font-weight:600;display:inline-flex;align-items:center;gap:6px}
     .signin-btn svg{width:16px;height:16px}
+    .dot-sm{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:8px;vertical-align:middle;background:#64748b;box-shadow:0 0 0 2px rgba(255,255,255,.08)}
+    .dot-sm.on{background:var(--ok)}
+    .avatar{width:20px;height:20px;border-radius:999px;object-fit:cover;margin-right:8px;border:1px solid rgba(255,255,255,.25);vertical-align:middle}
   </style>
 </head>
 <body>
@@ -62,7 +72,7 @@
           Sign in
         </button>
         <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out">Sign out</button>
-        <span id="who" class="muted"></span>
+        <span id="who" class="muted" aria-live="polite"></span>
       </div>
     </div>
   </header>
@@ -118,7 +128,13 @@
     // Cloud sync helpers (Firestore)
     async function cloudLoad(){ const u=auth.currentUser; if(!u) return null; const doc=await db.collection('dashboards').doc(u.uid).get(); return doc.exists?doc.data().items:null; }
     async function cloudSave(items){ const u=auth.currentUser; if(!u) return; await db.collection('dashboards').doc(u.uid).set({items},{merge:true}); }
-    function showUser(u){ who.textContent=u?`Signed in as ${u.displayName||u.email}`:''; signInBtn.style.display=u?'none':''; signOutBtn.style.display=u?'':'none'; }
+    function showUser(u){
+      const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
+      const avatar = u && u.photoURL ? `<img class="avatar" src="${u.photoURL}" alt=""/>` : '';
+      who.innerHTML = `<span class="dot-sm ${u?'on':'off'}"></span>${avatar}<span>${u?`Signed in as ${name}`:'Signed out'}</span>`;
+      signInBtn.style.display = u ? 'none' : '';
+      signOutBtn.style.display = u ? '' : 'none';
+    }
     signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
     signOutBtn.addEventListener('click',()=>auth.signOut());
     auth.onAuthStateChanged(async u=>{ showUser(u); if(!u) return; try{ const cloud=await cloudLoad(); if(cloud) save(cloud); else await cloudSave(load()??[]); items=rebuild(); render(); }catch(e){ console.warn('Cloud sync error',e);} });
@@ -240,6 +256,10 @@
         // escape
         const escd = esc('<>&"\'');
         console.assert(escd.includes('&lt;') && escd.includes('&gt;') && escd.includes('&amp;') && escd.includes('&quot;') && escd.includes('&#39;'), 'esc works');
+        // pct
+        console.assert(pct(0,100,50)===50, 'pct mid');
+        console.assert(pct(0,100,0)===0, 'pct start');
+        console.assert(pct(0,100,150)===100, 'pct cap end');
         // rebuild & defaults
         const firstBuild = rebuild();
         console.assert(Array.isArray(firstBuild) && firstBuild.length>0, 'rebuild returns defaults');
