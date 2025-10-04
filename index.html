@@ -382,13 +382,48 @@
     // Auth UI
     signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
     signOutBtn.addEventListener('click',()=>auth.signOut());
-    auth.onAuthStateChanged(async (u)=>{ showUser(u); if(!u){ updateSyncUI(); return; }
-      try{
-        save(stored); cloudSave(stored, true).catch(()=>{})
-        if(cloud){ save(cloud); lastSync = Date.now(); }
-        else { await cloudSave(load() ?? [], true); }
-        items = rebuild(); render(); updateSyncUI();
-      }catch(e){ syncError = e; updateSyncUI(); console.warn('Cloud sync error', e); }
+    // Lines 385–392 in your script:
+    // auth.onAuthStateChanged(async (u)=>{ showUser(u); if(!u){ updateSyncUI(); return; }
+    //     try{
+    //         save(stored); cloudSave(stored, true).catch(()=>{}) // <-- ERROR LINE (stored is not defined)
+    //         if(cloud){ save(cloud); lastSync = Date.now(); }
+    //         else { await cloudSave(load() ?? [], true); }
+    //         items = rebuild(); render(); updateSyncUI();
+    //       }catch(e){ syncError = e; updateSyncUI(); console.warn('Cloud sync error', e); }
+    //     });
+    
+    // REPLACEMENT:
+    auth.onAuthStateChanged(async (u) => {
+        showUser(u);
+        if (!u) {
+            updateSyncUI();
+            return;
+        }
+        
+        // Only attempt to sync if the user is signed in
+        try {
+            const cloud = await cloudLoad();
+            const local = load() ?? []; // Load current local storage data
+            
+            if (cloud) {
+                // Cloud data exists: sync cloud data DOWN, overriding local data
+                save(cloud);
+                lastSync = Date.now();
+            } else {
+                // Cloud data does NOT exist: sync local data UP to the cloud
+                // This is only done once on first sign-in/first device sync
+                await cloudSave(local, true);
+            }
+            
+            // Rebuild and render the list based on the now-synchronized data
+            items = rebuild();
+            render();
+            updateSyncUI();
+        } catch (e) {
+            syncError = e;
+            updateSyncUI();
+            console.warn('Cloud sync error', e);
+        }
     });
   });
   </script>
