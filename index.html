@@ -203,37 +203,65 @@
 
     // Sanitize payload to match strict rules (only allowed keys/types)
     function sanitizeItems(list){
-      if(!Array.isArray(list)) return [];
-      return list.map(it=>{
-        // Build the core item with required fields
-        const item = {
-          name: String(it?.name ?? '').slice(0,200),
-          due:  String(it?.due ?? ''),
-        };
+        if(!Array.isArray(list)) return [];
         
-        // Key fix: Only include 'start' if it has a valid string value
-        if (it?.start && String(it.start).length > 0) {
-          item.start = String(it.start);
-        }
-        
-        // Key fix: Only include 'completed' if it is explicitly true. 
-        // This ensures uncompleted tasks (completed: false) have a simpler 
-        // payload that strictly adheres to the security rules' optional fields.
-        if (it?.completed === true) {
-          item.completed = true;
-        }
+        return list.map(it=>{
+          // Extract, trim, and validate the raw property values
+          const name = String(it?.name ?? '').trim();
+          const due = String(it?.due ?? '').trim();
+          const start = String(it?.start ?? '').trim();
+          const completed = !!it?.completed;
+          
+          // Use a pristine object and only copy explicitly allowed fields.
+          // This ensures no unexpected keys from the local storage object leak through.
+          const item = {};
 
-        return item;
-      }).filter(it=>it.name && it.due);
+          // 1. name (Required)
+          if (name.length > 0 && name.length <= 200) {
+            item.name = name;
+          } else {
+            return null; // Invalid item: missing/empty name
+          }
+
+          // 2. due (Required - rules will check timestamp format)
+          if (due.length > 0) {
+            item.due = due;
+          } else {
+            return null; // Invalid item: missing/empty due date
+          }
+          
+          // 3. start (Optional - only include if it is a non-empty string)
+          if (start.length > 0) {
+            item.start = start;
+          }
+          
+          // 4. completed (Optional - only include if explicitly TRUE)
+          // If false, we exclude it to satisfy the security rule's optional check.
+          if (completed === true) {
+            item.completed = true;
+          }
+
+          return item;
+        }).filter(it => it !== null); // Filter out items that failed validation
     }
 
     async function cloudSave(items, isRawData = false){
       const u = auth.currentUser;
       if(!u){ updateSyncUI(); return; }
-      // The items array from the app is mapped to be ISO strings and sanitized
-      const safe = sanitizeItems(isRawData ? items : items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:!!i.completed })));
+      
+      // Map Date objects to ISO strings only if needed, then sanitize.
+      const dataForSanitize = isRawData ? items : items.map(i=>({ 
+        name:i.name, 
+        start:i.start?.toISOString?.(), // converts Date to string or undefined if null
+        due:i.due?.toISOString?.(), 
+        completed:!!i.completed 
+      }));
+      
+      const safe = sanitizeItems(dataForSanitize);
+
       try{
         syncing = true; syncError = null; updateSyncUI();
+        console.log('[cloudSave] Attempting save with sanitized data:', safe.length, 'items.'); 
         // Use set to force full document overwrite, which is required by the current security rules validation strategy.
         await db.collection('dashboards').doc(u.uid).set({ items: safe }); 
         lastSync = Date.now();
@@ -333,8 +361,8 @@
       // The object being saved to local storage (before rebuilding for cloud sync)
       const next = { 
           name, 
-          // Store start/due as ISO strings if they exist
-          start: start ? start.toISOString() : undefined, 
+          // Store start/due as ISO strings if they exist. Use null for fields that are empty.
+          start: start && !isNaN(start) ? start.toISOString() : undefined, 
           due: due.toISOString(), 
           // Preserve completed status from previous state
           completed: !!prev.completed 
@@ -401,7 +429,7 @@
         try{
           // Use .set() without merge to force full validation of the entire document
           await db.collection('dashboards').doc(u.uid)
-            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] });
+            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString() }] }); // Simplified diagnostic payload
           // FIX: Replaced alert() with console.log()
           console.log('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
         }catch(e){
