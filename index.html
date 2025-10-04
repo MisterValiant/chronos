@@ -65,54 +65,6 @@
   </style>
 </head>
 <body>
-  <!-- 
-    Final working Firestore Security Rules (2025-10-04):
-
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-
-        function isAuthenticated() {
-          return request.auth != null;
-        }
-
-        function isValidItem(item) {
-          return item is map
-                   && item.keys().hasOnly(['name', 'due', 'start', 'completed'])
-                   && item.name is string && item.name.size() > 0 && item.name.size() <= 200
-                   && item.due is string && isFirestoreTimestamp(item.due)
-                   // Use ternary check for optional fields
-                   && ('start' in item ? (item.start is string && isFirestoreTimestamp(item.start)) : true)
-                   && ('completed' in item ? (item.completed is bool) : true);
-        }
-
-        function isFirestoreTimestamp(dateString) {
-          // Flexible ISO 8601 regex
-          return dateString.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2}|[+-]\\d{4})$');
-        }
-
-        match /dashboards/{userId} {
-          allow read: if isAuthenticated() && userId == request.auth.uid;
-
-          // CREATE ACCESS (Initial Sync): Requires document to ONLY contain 'items' field.
-          allow create: if isAuthenticated() && userId == request.auth.uid
-            && request.resource.data is map
-            && request.resource.data.keys().hasOnly(['items'])
-            && request.resource.data.items is list
-            && request.resource.data.items.size() <= 100 
-            && request.resource.data.items.all(item, isValidItem(item));
-
-          // UPDATE ACCESS (Subsequent Saves): The most robust logic for partial updates.
-          // Checks that the new document state still contains a valid 'items' field.
-          allow update: if isAuthenticated() && userId == request.auth.uid
-            && 'items' in request.resource.data
-            && request.resource.data.items is list
-            && request.resource.data.items.size() <= 100
-            && request.resource.data.items.all(item, isValidItem(item));
-        }
-      }
-    }
-  -->
   <header>
     <div class="wrap">
       <div class="rowline">
@@ -252,13 +204,27 @@
     // Sanitize payload to match strict rules (only allowed keys/types)
     function sanitizeItems(list){
       if(!Array.isArray(list)) return [];
-      return list.map(it=>({
-        name: String(it?.name ?? '').slice(0,200),
-        due:  String(it?.due ?? ''),
-        ...(it?.start ? { start: String(it.start) } : {}),
-        // Ensure 'completed' is included if present, and is a boolean
-        ...(typeof it?.completed === 'boolean' ? { completed: it.completed } : {})
-      })).filter(it=>it.name && it.due);
+      return list.map(it=>{
+        // Build the core item with required fields
+        const item = {
+          name: String(it?.name ?? '').slice(0,200),
+          due:  String(it?.due ?? ''),
+        };
+        
+        // Key fix: Only include 'start' if it has a valid string value
+        if (it?.start && String(it.start).length > 0) {
+          item.start = String(it.start);
+        }
+        
+        // Key fix: Only include 'completed' if it is explicitly true. 
+        // This ensures uncompleted tasks (completed: false) have a simpler 
+        // payload that strictly adheres to the security rules' optional fields.
+        if (it?.completed === true) {
+          item.completed = true;
+        }
+
+        return item;
+      }).filter(it=>it.name && it.due);
     }
 
     async function cloudSave(items, isRawData = false){
@@ -268,8 +234,7 @@
       const safe = sanitizeItems(isRawData ? items : items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:!!i.completed })));
       try{
         syncing = true; syncError = null; updateSyncUI();
-        // Use merge:false on the final update. Since the entire document content is just 'items',
-        // using set without merge is cleaner and forces the validation on all nested fields.
+        // Use set to force full document overwrite, which is required by the current security rules validation strategy.
         await db.collection('dashboards').doc(u.uid).set({ items: safe }); 
         lastSync = Date.now();
       }catch(e){
@@ -360,13 +325,26 @@
       const name = form.name.value ? form.name.value.trim() : '';
       const due = form.due.value ? new Date(form.due.value) : null;
       const start = form.start.value ? new Date(form.start.value) : null;
-      if(!name || !due || isNaN(due)) return alert('Enter a valid name and due date/time.');
+      // FIX: Replaced alert() with console.error()
+      if(!name || !due || isNaN(due)) { console.error('Form validation failed: Enter a valid name and due date/time.'); return; }
       const stored = load() ?? [];
       const prev = editing >= 0 ? (stored[editing] || {}) : {};
-      // Ensure 'completed' status persists on save/update
-      const next = { name, start: start ? start.toISOString() : undefined, due: due.toISOString(), completed: !!prev.completed };
+      
+      // The object being saved to local storage (before rebuilding for cloud sync)
+      const next = { 
+          name, 
+          // Store start/due as ISO strings if they exist
+          start: start ? start.toISOString() : undefined, 
+          due: due.toISOString(), 
+          // Preserve completed status from previous state
+          completed: !!prev.completed 
+      }; 
+
       if(editing >= 0) stored[editing] = next; else stored.push(next);
-      save(stored); cloudSave(stored).catch(()=>{});
+      
+      // Cloud save uses the RAW stored object array, which sanitizeItems processes
+      save(stored); cloudSave(stored, true).catch(()=>{}); 
+
       items = rebuild(); close(); render(); updateSyncUI();
     });
 
@@ -418,15 +396,18 @@
         const u = auth.currentUser;
         const env = { signedIn: !!u, uid: u?.uid || null, projectId: (firebase.app()?.options?.projectId)||null, host: location.host };
         console.log('[Diagnostics] env:', env);
-        if(!u){ alert('Not signed in. Please sign in first.'); return; }
+        // FIX: Replaced alert() with console.error()
+        if(!u){ console.error('Not signed in. Please sign in first.'); return; }
         try{
           // Use .set() without merge to force full validation of the entire document
           await db.collection('dashboards').doc(u.uid)
             .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] });
-          alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
+          // FIX: Replaced alert() with console.log()
+          console.log('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
         }catch(e){
           console.error('[Diagnostics] write failed:', e.code, e.message, e);
-          alert('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nCheck Firestore rules.');
+          // FIX: Replaced alert() with console.error()
+          console.error('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nCheck Firestore rules.');
         }
       });
     }
