@@ -196,10 +196,10 @@
       })).filter(it=>it.name && it.due);
     }
 
-    async function cloudSave(items){
+    async function cloudSave(items, isRawData = false){
       const u = auth.currentUser;
       if(!u){ updateSyncUI(); return; }
-      const safe = sanitizeItems(items);
+      const safe = sanitizeItems(isRawData ? items : items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:!!i.completed })));
       try{
         syncing = true; syncError = null; updateSyncUI();
         await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true });
@@ -318,7 +318,7 @@
     completeBtn.addEventListener('click',()=>{
       if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
       stored[editing] = { ...stored[editing], completed: (completeMode==='complete') };
-      save(stored); cloudSave(stored).catch(()=>{});
+      save(stored); cloudSave(stored, true).catch(()=>{})
       items = rebuild(); close(); render(); updateSyncUI();
     });
 
@@ -328,7 +328,7 @@
       if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
       if(!deleteArmed){ armDelete(true); setTimeout(()=>{ if(deleteArmed) armDelete(false); }, 4000); return; }
       stored.splice(editing,1);
-      save(stored); cloudSave(stored).catch(()=>{});
+      save(stored); cloudSave(stored, true).catch(()=>{})
       items = rebuild(); close(); render(); updateSyncUI();
     });
 
@@ -384,9 +384,9 @@
     signOutBtn.addEventListener('click',()=>auth.signOut());
     auth.onAuthStateChanged(async (u)=>{ showUser(u); if(!u){ updateSyncUI(); return; }
       try{
-        const cloud = await cloudLoad();
+        save(stored); cloudSave(stored, true).catch(()=>{})
         if(cloud){ save(cloud); lastSync = Date.now(); }
-        else { await cloudSave(load() ?? []); }
+        else { await cloudSave(load() ?? [], true); }
         items = rebuild(); render(); updateSyncUI();
       }catch(e){ syncError = e; updateSyncUI(); console.warn('Cloud sync error', e); }
     });
