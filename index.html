@@ -18,9 +18,16 @@
     h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,3vw,34px)}
     .muted{color:var(--muted);font-size:13px}
     .pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,.08);box-shadow:var(--shadow);cursor:pointer}
-    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer;padding:8px 32px 8px 10px;border-radius:999px;outline:none;position:relative}
+    /* Updated .select padding: 0px top/bottom to rely on parent .pill's 10px padding for consistent height */
+    .select{appearance:none;background:transparent;border:none;color:var(--txt);font:inherit;cursor:pointer;padding:0 32px 0 10px;border-radius:999px;outline:none;position:relative}
     label.pill{position:relative}
-    label.pill .select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+    label.pill .select{
+      /* Ensure consistent vertical alignment/sizing inside the pill (redundant but safe) */
+      padding: 0 32px 0 10px; 
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;
+      background-position:right 10px center
+    }
     .select:focus{box-shadow:0 0 0 2px rgba(147,197,253,.35)}
     .select:hover{background-color:rgba(255,255,255,.06)}
     main{max-width:1200px;margin:20px auto;padding:0 18px 80px}
@@ -28,11 +35,16 @@
     .card{position:relative;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.10);box-shadow:var(--shadow);padding:16px}
     .card.completed{opacity:.65;filter:saturate(.85)}
     .badge{font-size:12px;letter-spacing:.3px;text-transform:uppercase;color:#dbe6ff;opacity:.9}
-    .name{margin:6px 0 10px;font-size:18px;font-weight:700}
+    .name{margin:8px 0 10px;font-size:20px;font-weight:700;max-width:calc(100% - 60px)} 
     .deadline{color:var(--muted);font-size:12px}
+    /* Deadline color status updates */
+    .deadline.overdue-status{color:var(--danger)}
+    .deadline.completed-status{color:var(--ok)}
+    .deadline.warning-status{color:var(--warn)}
+    /* End Deadline color status updates */
     .timer{margin:12px 0 8px;display:flex;gap:8px;flex-wrap:wrap}
-    .chunk{min-width:64px;padding:10px;border-radius:12px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-    .num{display:block;font-size:22px;font-weight:800}
+    .chunk{min-width:50px;padding:8px;border-radius:12px;text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+    .num{display:block;font-size:18px;font-weight:800} 
     .lab{display:block;margin-top:2px;font-size:11px;color:#c7d2fe}
     .status{margin-top:8px;font-size:12px}
     .status .dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:6px;vertical-align:middle}
@@ -53,6 +65,54 @@
   </style>
 </head>
 <body>
+  <!-- 
+    Final working Firestore Security Rules (2025-10-04):
+
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+
+        function isAuthenticated() {
+          return request.auth != null;
+        }
+
+        function isValidItem(item) {
+          return item is map
+                   && item.keys().hasOnly(['name', 'due', 'start', 'completed'])
+                   && item.name is string && item.name.size() > 0 && item.name.size() <= 200
+                   && item.due is string && isFirestoreTimestamp(item.due)
+                   // Use ternary check for optional fields
+                   && ('start' in item ? (item.start is string && isFirestoreTimestamp(item.start)) : true)
+                   && ('completed' in item ? (item.completed is bool) : true);
+        }
+
+        function isFirestoreTimestamp(dateString) {
+          // Flexible ISO 8601 regex
+          return dateString.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?([Zz]|[+-]\\d{2}:\\d{2}|[+-]\\d{4})$');
+        }
+
+        match /dashboards/{userId} {
+          allow read: if isAuthenticated() && userId == request.auth.uid;
+
+          // CREATE ACCESS (Initial Sync): Requires document to ONLY contain 'items' field.
+          allow create: if isAuthenticated() && userId == request.auth.uid
+            && request.resource.data is map
+            && request.resource.data.keys().hasOnly(['items'])
+            && request.resource.data.items is list
+            && request.resource.data.items.size() <= 100 
+            && request.resource.data.items.all(item, isValidItem(item));
+
+          // UPDATE ACCESS (Subsequent Saves): The most robust logic for partial updates.
+          // Checks that the new document state still contains a valid 'items' field.
+          allow update: if isAuthenticated() && userId == request.auth.uid
+            && 'items' in request.resource.data
+            && request.resource.data.items is list
+            && request.resource.data.items.size() <= 100
+            && request.resource.data.items.all(item, isValidItem(item));
+        }
+      }
+    }
+  -->
   <header>
     <div class="wrap">
       <div class="rowline">
@@ -171,7 +231,12 @@
       if(!syncEl) return;
       if(!u){ syncEl.innerHTML = '<span class="dot-sm"></span> Local only'; return; }
       if(syncing){ syncEl.innerHTML = '<span class="dot-sm on"></span> Syncing...'; return; }
-      if(syncError){ syncEl.innerHTML = '<span class="dot-sm" style="background:var(--danger)"></span> Sync failed'; return; }
+      if(syncError){ 
+        // Display the specific error for debugging
+        const code = syncError.code || 'UNKNOWN';
+        syncEl.innerHTML = `<span class="dot-sm" style="background:var(--danger)"></span> Sync failed (${code})`; 
+        return; 
+      }
       if(lastSync){ syncEl.innerHTML = '<span class="dot-sm on"></span> Cloud saved ' + hhmm(lastSync); return; }
       syncEl.innerHTML = '<span class="dot-sm"></span> Connected';
     }
@@ -191,6 +256,7 @@
         name: String(it?.name ?? '').slice(0,200),
         due:  String(it?.due ?? ''),
         ...(it?.start ? { start: String(it.start) } : {}),
+        // Ensure 'completed' is included if present, and is a boolean
         ...(typeof it?.completed === 'boolean' ? { completed: it.completed } : {})
       })).filter(it=>it.name && it.due);
     }
@@ -198,13 +264,15 @@
     async function cloudSave(items, isRawData = false){
       const u = auth.currentUser;
       if(!u){ updateSyncUI(); return; }
+      // The items array from the app is mapped to be ISO strings and sanitized
       const safe = sanitizeItems(isRawData ? items : items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:!!i.completed })));
       try{
         syncing = true; syncError = null; updateSyncUI();
-        await db.collection('dashboards').doc(u.uid).set({ items: safe }, { merge: true });
+        // Use merge:false on the final update. Since the entire document content is just 'items',
+        // using set without merge is cleaner and forces the validation on all nested fields.
+        await db.collection('dashboards').doc(u.uid).set({ items: safe }); 
         lastSync = Date.now();
       }catch(e){
-        // Match strict rules: only { items } on create/update
         syncError = e;
         console.warn('Cloud save failed', e.code, e.message, e);
       }
@@ -246,11 +314,21 @@
       const per = pct(it.start?.getTime(), it.due.getTime(), now.getTime());
       const badge = it.completed ? 'Completed' : (ms < 0 ? 'Overdue' : 'Upcoming');
       const status = it.completed ? 'Completed' : (ms < 0 ? 'Overdue' : hint(p));
+      
+      let dateClass = '';
+      if (it.completed) {
+        dateClass = 'completed-status';
+      } else if (ms < 0) {
+        dateClass = 'overdue-status';
+      } else if (ms > 0 && ms / 36e5 <= 72) { // Less than 72 hours (3 days)
+        dateClass = 'warning-status';
+      }
+
       return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
         <div class="badge">${badge}</div>
         <div class="actions"><button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button></div>
         <div class="name">${esc(it.name)}</div>
-        <div class="deadline">Due: ${fmt(it.due)}</div>
+        <div class="deadline ${dateClass}">Due: ${fmt(it.due)}</div>
         <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
         <div class="status"><span class="dot" style="background:${c}"></span>${status}</div>
         ${per==null ? '' : `<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
@@ -285,6 +363,7 @@
       if(!name || !due || isNaN(due)) return alert('Enter a valid name and due date/time.');
       const stored = load() ?? [];
       const prev = editing >= 0 ? (stored[editing] || {}) : {};
+      // Ensure 'completed' status persists on save/update
       const next = { name, start: start ? start.toISOString() : undefined, due: due.toISOString(), completed: !!prev.completed };
       if(editing >= 0) stored[editing] = next; else stored.push(next);
       save(stored); cloudSave(stored).catch(()=>{});
@@ -316,6 +395,7 @@
     // Complete / Undo Complete
     completeBtn.addEventListener('click',()=>{
       if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
+      // Use raw data (ISO strings) from storage for cloudSave
       stored[editing] = { ...stored[editing], completed: (completeMode==='complete') };
       save(stored); cloudSave(stored, true).catch(()=>{})
       items = rebuild(); close(); render(); updateSyncUI();
@@ -327,6 +407,7 @@
       if(editing<0) return; const stored = load() ?? []; if(!stored[editing]) return;
       if(!deleteArmed){ armDelete(true); setTimeout(()=>{ if(deleteArmed) armDelete(false); }, 4000); return; }
       stored.splice(editing,1);
+      // Use raw data (ISO strings) from storage for cloudSave
       save(stored); cloudSave(stored, true).catch(()=>{})
       items = rebuild(); close(); render(); updateSyncUI();
     });
@@ -339,8 +420,9 @@
         console.log('[Diagnostics] env:', env);
         if(!u){ alert('Not signed in. Please sign in first.'); return; }
         try{
+          // Use .set() without merge to force full validation of the entire document
           await db.collection('dashboards').doc(u.uid)
-            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] }, { merge: true });
+            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString(), completed: false }] });
           alert('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
         }catch(e){
           console.error('[Diagnostics] write failed:', e.code, e.message, e);
@@ -379,44 +461,43 @@
     })();
 
     // Auth UI
-    // Auth UI
-        signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
-        signOutBtn.addEventListener('click',()=>auth.signOut());
-        
-        auth.onAuthStateChanged(async (u) => {
-            showUser(u);
-            if (!u) {
-                updateSyncUI();
-                return;
+    signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
+    signOutBtn.addEventListener('click',()=>auth.signOut());
+    
+    auth.onAuthStateChanged(async (u) => {
+        showUser(u);
+        if (!u) {
+            updateSyncUI();
+            return;
+        }
+
+        // Only attempt to sync if the user is signed in
+        try {
+            const localData = load() ?? []; // Load current local storage data
+            const cloud = await cloudLoad(); // Attempt to load cloud data
+
+            if (cloud) {
+                // Scenario 1: Cloud data exists. Sync cloud data DOWN, overriding local data.
+                save(cloud);
+                lastSync = Date.now();
+            } else {
+                // Scenario 2: Cloud data does NOT exist. Sync local data UP to the cloud.
+                // This typically happens on a user's first sign-in on a device with local data.
+                await cloudSave(localData, true);
             }
-    
-            // Only attempt to sync if the user is signed in
-            try {
-                const localData = load() ?? []; // Load current local storage data
-                const cloud = await cloudLoad(); // Attempt to load cloud data
-    
-                if (cloud) {
-                    // Scenario 1: Cloud data exists. Sync cloud data DOWN, overriding local data.
-                    save(cloud);
-                    lastSync = Date.now();
-                } else {
-                    // Scenario 2: Cloud data does NOT exist. Sync local data UP to the cloud.
-                    // This typically happens on a user's first sign-in on a device with local data.
-                    await cloudSave(localData, true);
-                }
-    
-                // Rebuild and render the list based on the now-synchronized data
-                items = rebuild();
-                render();
-                updateSyncUI();
-    
-            } catch (e) {
-                syncError = e;
-                updateSyncUI();
-                console.warn('Cloud sync error:', e);
-            }
-        });
+
+            // Rebuild and render the list based on the now-synchronized data
+            items = rebuild();
+            render();
+            updateSyncUI();
+
+        } catch (e) {
+            syncError = e;
+            updateSyncUI();
+            console.warn('Cloud sync error:', e);
+        }
     });
+  });
   </script>
 </body>
 </html>
