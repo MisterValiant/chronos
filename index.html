@@ -117,6 +117,38 @@
     .empty-groups{margin-top:12px}
     @media(max-width:520px){.wrap{padding:14px}.section-title{font-size:16px}.card .name{font-size:18px}}
 
+    /* Chronos controls: consistent with the dark glass aesthetic */
+    :root { color-scheme: dark; }
+    button, input, select { font-family: inherit; }
+    .pill { color: var(--txt); font-size: 13px; font-weight: 600; line-height: 1.3; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+    button.pill { appearance: none; -webkit-appearance: none; color: var(--txt); }
+    button.pill:hover, label.pill:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.22); }
+    button.pill:active { transform: translateY(1px); }
+    #add, #addGroup { color: #f3f5ff; }
+    #addGroup { border-color: rgba(147,197,253,.24); }
+    #signin.signin-btn { background: #f5f7ff; color: #19203c; border-color: rgba(255,255,255,.55); }
+    #signin.signin-btn:hover { background: white; }
+    #signout { display:inline-flex; align-items:center; gap:8px; color: #fff; background:rgba(255,255,255,.10); }
+    #signout .exit-person { width:17px; height:17px; display:block; flex:none; color:#6ee7b7; }
+    /* Hide completed checkbox: no unthemed system checkbox */
+    #hideDone { appearance:none; -webkit-appearance:none; width:17px; height:17px; margin:0 3px 0 0 !important; border:1px solid rgba(197,209,255,.45); border-radius:5px; background:rgba(4,9,27,.42); display:inline-grid; place-items:center; cursor:pointer; flex:none; transition:background .15s,border-color .15s; }
+    #hideDone:checked { background:#6ee7b7; border-color:#6ee7b7; }
+    #hideDone:checked::after { content:''; width:8px; height:4px; border-left:2px solid #081b27; border-bottom:2px solid #081b27; transform:translateY(-1px) rotate(-45deg); }
+    #hideDone:focus-visible { outline:2px solid #93c5fd; outline-offset:3px; }
+    /* Dropdown list and popup use dark surfaces; keep native keyboard behavior */
+    .select, .form-select, .f select { color:var(--txt); color-scheme:dark; cursor:pointer; }
+    .select option, .f select option { background:#202644; color:#eef2ff; }
+    label.pill .select { font-size:13px; font-weight:600; }
+    .f input, .f select { color-scheme:dark; transition:border-color .16s, background .16s, box-shadow .16s; }
+    .f input:hover, .f select:hover { border-color:rgba(147,197,253,.38); }
+    .f input:focus-visible, .f select:focus-visible { outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(147,197,253,.16); }
+    .f select { appearance:none; -webkit-appearance:none; padding-right:38px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%23dbe6ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-position:right 13px center; background-repeat:no-repeat; }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator { cursor:pointer; filter:invert(1) opacity(.8); }
+    .btn, .mini-btn, .icon-choice, .color-choice { font-family:inherit; }
+    .btn { color:var(--txt); }
+    .btn:hover { border-color:rgba(255,255,255,.3); background:rgba(255,255,255,.15); }
+    .btn:focus-visible, .mini-btn:focus-visible, .icon-choice:focus-visible, .color-choice:focus-visible, button.pill:focus-visible { outline:2px solid #93c5fd; outline-offset:3px; }
+    .icon-choice.selected, .color-choice.selected { border-color:#93c5fd; }
   </style>
 </head>
 <body>
@@ -138,7 +170,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFCA28"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           Sign in
         </button>
-        <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out">Sign out</button>
+        <button id="signout" class="pill" type="button" style="display:none" aria-label="Sign out"><svg class="exit-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 3h2v18h-2M14 12h7"/><circle cx="9.5" cy="4.5" r="2"/><path d="m9 8-2.5 5 4 2 1.5 6M7 13l-4 4m7-9 3 3h3"/></svg><span>Sign out</span></button>
         <span id="who" class="muted" aria-live="polite"></span>
         <span id="sync" class="muted"></span>
       </div>
