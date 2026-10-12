@@ -104,6 +104,14 @@
     .group-toggle:hover{background:rgba(255,255,255,.045)}
     .group-toggle:focus-visible{outline:2px solid #93c5fd;outline-offset:1px}
     .group-toggle .section-heading{flex:1;min-width:0}
+    .group-details{display:block;min-width:0;flex:1}
+    .group-peek{display:grid;gap:5px;margin-top:9px;max-width:460px}
+    .peek-item{display:flex;align-items:baseline;justify-content:space-between;gap:14px;min-width:0;font-size:11px;font-weight:400;line-height:1.3;color:rgba(232,236,255,.78)}
+    .peek-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+    .peek-name::before{content:'·';color:#7c87ad;margin-right:8px}
+    .peek-due{flex:none;color:#aeb9dd;font-size:10px;font-variant-numeric:tabular-nums}
+    .peek-extra{font-size:10px;color:#8794bd;padding-left:12px;line-height:1.25}
+    .group-toggle[aria-expanded="true"] .group-peek{display:none}
     .group-toggle .section-title{font-size:14px}
     .group-toggle .section-note{font-size:11px}
     .group-chevron{width:17px;height:17px;color:#b9c6ff;flex:none;transition:transform .18s}
@@ -206,7 +214,7 @@
     <section id="ungroupedSection" class="group-section" data-group-id="__ungrouped__" aria-label="Ungrouped deadlines">
       <div class="group-accordion">
         <button id="ungroupedToggle" type="button" class="group-toggle" data-group-action="toggle" data-group-id="__ungrouped__" aria-expanded="false" aria-controls="ungroupedPanel">
-          <span class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><span><span class="section-title" style="display:block">Ungrouped</span><span class="section-note" id="ungroupedCount">0 deadlines</span></span></span>
+          <span class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><span class="group-details"><span class="section-title" style="display:block">Ungrouped</span><span class="section-note" id="ungroupedCount">0 deadlines</span><span id="ungroupedPeek" class="group-peek" aria-hidden="true"></span></span></span>
           <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
       </div>
@@ -333,9 +341,12 @@
       certificate:'<rect x="3" y="3" width="18" height="17" rx="2"/><path d="M7 8h10M7 12h6m4 2-2 6 3-1 3 1-2-6"/>',
       headphones:'<path d="M4 14V12a8 8 0 0 1 16 0v2M4 14h4v7H6a2 2 0 0 1-2-2zm12 0h4v5a2 2 0 0 1-2 2h-2z"/>'
     };
-    const GROUP_COLORS = ['#93c5fd','#7dd3fc','#a5b4fc','#c4b5fd','#d8b4fe','#f0abfc','#67e8f9','#5eead4','#6ee7b7','#94a3b8'];
+    // Distinct, soft hues: warm group accents are muted so deadline warnings remain prominent.
+    const GROUP_COLORS = ['#7db5f9','#b6a3f6','#5dd5c5','#88cd9b','#e8a4d5','#e7a69a','#d3bc82','#85cbe5','#bdafd5','#aeb7c9'];
+    // Preserve colours assigned by earlier Chronos releases (no unexpected badge reset).
+    const LEGACY_GROUP_COLORS = ['#93c5fd','#7dd3fc','#a5b4fc','#c4b5fd','#d8b4fe','#f0abfc','#67e8f9','#5eead4','#6ee7b7','#94a3b8'];
     const safeIcon = value => Object.prototype.hasOwnProperty.call(GROUP_ICONS, value) ? value : 'folder';
-    const safeColor = value => GROUP_COLORS.includes(value) ? value : GROUP_COLORS[0];
+    const safeColor = value => [...GROUP_COLORS,...LEGACY_GROUP_COLORS].includes(value) ? value : GROUP_COLORS[0];
     const iconSvg = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${GROUP_ICONS[safeIcon(name)]}</svg>`;
     function sanitizeGroups(list){
       if(!Array.isArray(list)) return [];
@@ -528,10 +539,26 @@
     const pri = (it,now) => it.completed ? 2 : (it.due.getTime() < now ? 0 : 1);
     const sortItems = (mode) => { const now = Date.now(); items.sort((a,b)=> pri(a,now)-pri(b,now) || (mode==='name' ? a.name.localeCompare(b.name) : a.due-b.due)); };
     const groupFor = it => groups.find(g=>g.id===it.groupId) || null;
+    // Only genuinely unassigned cards belong here; a grouped card must never inflate this count.
+    const isUngrouped = it => !it.groupId;
+    const visibleTasks = list => list.filter(i=>!i.completed || !hideDone.checked);
+    function compactDue(d, now){
+      return d.toLocaleDateString(undefined,{day:'numeric',month:'short',...(d.getFullYear()!==now.getFullYear()?{year:'numeric'}:{})});
+    }
+    // Quiet, static list preview. No ticking DOM here, so collapsed sections remain still.
+    function groupPeek(list, now){
+      const sorted=[...list].sort((a,b)=>{
+        const rank=i => i.completed?2:i.due<now?1:0;
+        return rank(a)-rank(b) || a.due-b.due;
+      });
+      if(!sorted.length)return '';
+      const rows=sorted.slice(0,2).map(i=>`<span class="peek-item"><span class="peek-name" title="${esc(i.name)}">${esc(i.name)}</span><time class="peek-due" datetime="${esc(i.due.toISOString())}">${esc(compactDue(i.due,now))}</time></span>`).join('');
+      return rows+(sorted.length>2?`<span class="peek-extra">+${sorted.length-2} more</span>`:'');
+    }
     function groupBadge(g){
       return `<span class="group-tag" style="--group-color:${safeColor(g.color)}" title="${esc(g.name)}">${iconSvg(g.icon)}<span>${esc(groupAcronym(g.name))}</span></span>`;
     }
-    const box = (n,l) => `<div class="chunk"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
+    const box = (n,l,k) => `<div class="chunk" data-unit="${k}"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
 
     function card(it, now, hide){
       if(it.completed && hide) return '';
@@ -559,8 +586,8 @@
         </div>
         <div class="name">${esc(it.name)}</div>
         <div class="deadline ${dateClass}">Due: ${fmt(it.due)}</div>
-        <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
-        <div class="status"><span class="status-copy"><span class="dot" style="background:${c}"></span>${status}</span>${groupFor(it) ? groupBadge(groupFor(it)) : ''}</div>
+        <div class="timer">${box(p.d,'Days','d')}${box(p.h,'Hours','h')}${box(p.m,'Mins','m')}${box(p.x,'Secs','x')}</div>
+        <div class="status"><span class="status-copy"><span class="dot" style="background:${c}"></span><span class="status-text">${status}</span></span>${groupFor(it) ? groupBadge(groupFor(it)) : ''}</div>
         ${per==null ? '' : `<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
       </article>`;
     }
@@ -575,17 +602,17 @@
       grid.innerHTML=overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
       $('#overviewCount').textContent=overview.length+' / 4';
       sortItems(sortSel.value);
-      const sectionCards=list=>list.map(i=>card(i,now,hideDone.checked)).join('');
+      const sectionCards=list=>list.map(i=>card(i,now,false)).join('');
       groupSections.innerHTML=groups.map(g=>{
-        const all=items.filter(i=>i.groupId===g.id);
-        const visible=all.filter(i=>!i.completed || !hideDone.checked);
+        const visible=visibleTasks(items.filter(i=>i.groupId===g.id));
         const expanded=expandedGroupId===g.id;
         const panelId='group-panel-'+g.id.replace(/[^a-zA-Z0-9_-]/g,'-');
+        const count=visible.length;
         return `<section class="group-section" data-group-id="${esc(g.id)}" aria-label="${esc(g.name)}">
           <div class="group-accordion">
             <button class="group-toggle" type="button" data-group-action="toggle" data-group-id="${esc(g.id)}" aria-expanded="${expanded}" aria-controls="${esc(panelId)}" aria-label="${expanded?'Collapse':'Expand'} ${esc(g.name)}">
-              <span class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><span>
-              <span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${all.length} ${all.length===1?'deadline':'deadlines'}</span></span></span>
+              <span class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><span class="group-details">
+              <span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${count} ${count===1?'deadline':'deadlines'}</span>${!expanded?`<span class="group-peek" aria-hidden="true">${groupPeek(visible,now)}</span>`:''}</span></span>
               ${groupChevron}
             </button>
             <button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button>
@@ -595,19 +622,57 @@
           </div>
         </section>`;
       }).join('') || '<div class="empty-state empty-groups">Create a group to organise your deadlines. You can pick an icon and a colour.</div>';
-      const misc=items.filter(i=>!groupFor(i));
-      const miscVisible=misc.filter(i=>!i.completed || !hideDone.checked);
-      $('#ungroupedCount').textContent=misc.length+' '+(misc.length===1?'deadline':'deadlines');
+      const misc=items.filter(isUngrouped);
+      const miscVisible=visibleTasks(misc);
+      $('#ungroupedCount').textContent=miscVisible.length+' '+(miscVisible.length===1?'deadline':'deadlines');
       const ungroupedExpanded=expandedGroupId===UNGROUPED_KEY;
       $('#ungroupedToggle').setAttribute('aria-expanded',String(ungroupedExpanded));
       $('#ungroupedToggle').setAttribute('aria-label',(ungroupedExpanded?'Collapse':'Expand')+' Ungrouped');
+      $('#ungroupedPeek').innerHTML=ungroupedExpanded?'':groupPeek(miscVisible,now);
       $('#ungroupedPanel').hidden=!ungroupedExpanded;
       ungroupedGrid.innerHTML=ungroupedExpanded?(miscVisible.length?sectionCards(miscVisible):'<div class="empty-state">No ungrouped deadlines.</div>'):'';
-      // Refreshing the ticking countdowns must not steal keyboard focus from an accordion toggle.
+      // Focus persists after explicit structural re-renders (not on each timer tick).
       if(focusId && focusId!==UNGROUPED_KEY){
         const replacement=Array.from(groupSections.querySelectorAll('[data-group-action="toggle"]')).find(el=>el.dataset.groupId===focusId);
         replacement?.focus({preventScroll:true});
       }
+    }
+    // Update only ticking values. Rebuilding the accordion each second was restarting its
+    // entrance animation and replacing the card DOM, causing the reported blinking.
+    function tickCountdowns(){
+      const now=new Date();
+      const expected=items.filter(i=>!i.completed && i.due>=now).sort((a,b)=>a.due-b.due).slice(0,4).map(i=>String(i.idx));
+      const current=Array.from(grid.querySelectorAll('.card')).map(el=>el.dataset.idx);
+      // Rebuild when a top-four deadline expires so the next task takes its place.
+      if(expected.length!==current.length || expected.some((id,k)=>id!==current[k])){
+        render();
+        return;
+      }
+      const indexed=new Map(items.map(i=>[String(i.idx),i]));
+      document.querySelectorAll('.card[data-idx]').forEach(el=>{
+        const it=indexed.get(el.dataset.idx);
+        if(!it)return;
+        const ms=it.due-now;
+        const p=parts(ms);
+        for(const unit of ['d','h','m','x']){
+          const target=el.querySelector(`[data-unit="${unit}"] .num`);
+          if(target){const value=String(p[unit]).padStart(2,'0');if(target.textContent!==value)target.textContent=value;}
+        }
+        const status=it.completed?'Completed':ms<0?'Overdue':hint(p);
+        const label=el.querySelector('.status-text');
+        if(label && label.textContent!==status)label.textContent=status;
+        const dot=el.querySelector('.status-copy .dot');
+        if(dot)dot.style.background=color(ms);
+        const bar=el.querySelector('.progress > span');
+        if(bar){const per=pct(it.start?.getTime(),it.due.getTime(),now.getTime());if(per!=null)bar.style.width=clamp(per,0,100).toFixed(1)+'%';}
+        const deadline=el.querySelector('.deadline');
+        if(deadline && !it.completed){
+          deadline.classList.toggle('overdue-status',ms<0);
+          deadline.classList.toggle('warning-status',ms>=0 && ms/36e5<=72);
+        }
+        const badge=el.querySelector('.badge');
+        if(badge){const text=it.completed?'Completed':ms<0?'Overdue':'Upcoming';if(badge.textContent!==text)badge.textContent=text;}
+      });
     }
     function revealGroup(groupId){
       expandedGroupId=groups.some(g=>g.id===groupId) ? groupId : UNGROUPED_KEY;
@@ -619,8 +684,8 @@
       }
     }
 
-    // First render, then tick every second
-    render(); setInterval(render, 1000);
+    // First render, then update the timer numbers in-place every second.
+    render(); setInterval(tickCountdowns, 1000);
 
     // Seed defaults on first run
     if(!load()) save(items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:false })));
@@ -728,7 +793,8 @@
     // ===== Group editor =====
     function drawGroupChoices(){
       $('#groupIcons').innerHTML=Object.keys(GROUP_ICONS).map(k=>`<button type="button" class="icon-choice${selectedIcon===k?' selected':''}" data-icon="${k}" title="${k}" aria-label="${k}" aria-pressed="${selectedIcon===k}">${iconSvg(k)}</button>`).join('');
-      $('#groupColors').innerHTML=GROUP_COLORS.map(c=>`<button type="button" class="color-choice${selectedColor===c?' selected':''}" data-color="${c}" style="--swatch:${c}" title="${c}" aria-label="Choose ${c}" aria-pressed="${selectedColor===c}"></button>`).join('');
+      const palette=GROUP_COLORS.includes(selectedColor)?GROUP_COLORS:[selectedColor,...GROUP_COLORS];
+      $('#groupColors').innerHTML=palette.map(c=>`<button type="button" class="color-choice${selectedColor===c?' selected':''}" data-color="${c}" style="--swatch:${c}" title="${c}" aria-label="Choose ${c}" aria-pressed="${selectedColor===c}"></button>`).join('');
       const name=$('#groupName').value.trim()||'My group';
       $('#groupBadgePreview').innerHTML=`Badge preview: ${groupBadge({name,icon:selectedIcon,color:selectedColor})}`;
     }
@@ -829,7 +895,12 @@
         console.assert(sanitizeGroups([{id:'1',name:'G',icon:'bad',color:'red'}])[0].icon==='folder', 'invalid group icon rejected');
         console.assert(sanitizeGroups([{id:'1',name:'G',icon:'leaf',color:'red'}])[0].color===GROUP_COLORS[0], 'invalid group colour rejected');
         console.assert(sanitizeGroups([{id:'1',name:'First'},{id:'1',name:'Duplicate'}]).length===1, 'duplicate group IDs removed');
-        console.assert(!GROUP_COLORS.includes('#fdba74') && !GROUP_COLORS.includes('#fcd34d') && !GROUP_COLORS.includes('#ef4444'), 'warm deadline hues excluded from group palette');
+        console.assert(!GROUP_COLORS.includes('#fdba74') && !GROUP_COLORS.includes('#fcd34d') && !GROUP_COLORS.includes('#ef4444'), 'urgent deadline colours remain distinct from group accents');
+        console.assert(GROUP_COLORS.includes('#d3bc82') && GROUP_COLORS.includes('#e7a69a'), 'muted gold and coral group options exist');
+        console.assert(safeColor('#93c5fd')==='#93c5fd', 'legacy saved group colours remain valid');
+        console.assert(isUngrouped({groupId:''}) && !isUngrouped({groupId:'group_one'}), 'grouped tasks never counted as ungrouped');
+        console.assert(groupPeek([{name:'Test task',due:new Date('2026-11-02T12:00:00'),completed:false}],new Date('2026-10-12')).includes('Test task'), 'closed accordion preview includes task');
+        console.assert(groupPeek([],new Date())==='', 'empty group preview remains empty');
         console.assert(!!GROUP_ICONS.conference && !!GROUP_ICONS.journal && !!GROUP_ICONS.article, 'academic icons available');
         console.assert(defaultDueTime(new Date('2026-10-12T08:30:00')).endsWith('T23:59'), 'new deadlines default to 11:59 PM local time');
         console.assert(expandedGroupId===null && $('#ungroupedPanel').hidden, 'all group accordions initially collapsed');
