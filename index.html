@@ -133,6 +133,9 @@
     .group-controls{display:flex;align-items:center;gap:7px}
     .mini-btn{border:1px solid rgba(255,255,255,.13);border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);padding:7px 10px;cursor:pointer;font:inherit;font-size:12px}
     .mini-btn:hover,.mini-btn:focus-visible{color:var(--txt);background:rgba(255,255,255,.12)}
+    /* Compact, theme-matched quick-add beside each group's Edit control. */
+    .group-add-btn{width:34px;height:34px;flex:none;padding:0;display:inline-flex;align-items:center;justify-content:center;color:#b8f2df;font-size:19px;font-weight:500;line-height:1}
+    .group-add-btn:hover,.group-add-btn:focus-visible{color:#6ee7b7;border-color:rgba(110,231,183,.42)}
     .empty-state{padding:26px 20px;border:1px dashed rgba(255,255,255,.16);background:rgba(255,255,255,.025);border-radius:16px;text-align:center;color:var(--muted);font-size:13px}
     .group-sheet{max-height:min(88vh,840px);overflow-y:auto}
     .choice-label{color:var(--muted);font-size:12px;margin:12px 0 7px;display:block}
@@ -657,6 +660,13 @@
 
     const pri = (it,now) => it.completed ? 2 : (it.due.getTime() < now ? 0 : 1);
     const sortItems = (mode) => { const now = Date.now(); items.sort((a,b)=> pri(a,now)-pri(b,now) || (mode==='name' ? a.name.localeCompare(b.name) : a.due-b.due)); };
+    // Keep the overview focused on the four nearest active deadlines, but honour
+    // the selected ordering (Soonest or A→Z) within those four cards.
+    function overviewItems(now, mode, source=items){
+      const nearest=source.filter(i=>!i.completed && i.due.getTime()>=now.getTime())
+        .sort((a,b)=>a.due-b.due || a.name.localeCompare(b.name)).slice(0,4);
+      return mode==='name' ? nearest.sort((a,b)=>a.name.localeCompare(b.name) || a.due-b.due) : nearest;
+    }
     const groupFor = it => groups.find(g=>g.id===it.groupId) || null;
     // Only genuinely unassigned cards belong here; a grouped card must never inflate this count.
     const isUngrouped = it => !it.groupId;
@@ -717,8 +727,7 @@
       const focus = document.activeElement?.closest?.('[data-group-action="toggle"]');
       const focusId = focus?.dataset.groupId;
       const now=new Date();
-      const active=items.filter(i=>!i.completed && i.due.getTime()>=now.getTime()).sort((a,b)=>a.due-b.due);
-      const overview=active.slice(0,4);
+      const overview=overviewItems(now,sortSel.value);
       grid.innerHTML=overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
       $('#overviewCount').textContent=overview.length+' / 4';
       sortItems(sortSel.value);
@@ -735,6 +744,7 @@
               <span class="group-meta"><span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${count} ${count===1?'deadline':'deadlines'}</span></span>${!expanded?`<span class="group-peek" aria-hidden="true">${groupPeek(visible,now)}</span>`:''}</span></span>
               ${groupChevron}
             </button>
+            <button class="mini-btn group-add-btn" type="button" data-group-action="add" data-group-id="${esc(g.id)}" aria-label="Add a deadline to ${esc(g.name)}" title="Add deadline to ${esc(g.name)}">+</button>
             <button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button>
           </div>
           <div id="${esc(panelId)}" class="accordion-panel" role="region" aria-label="${esc(g.name)} countdowns" ${expanded?'':'hidden'}>
@@ -761,7 +771,7 @@
     // entrance animation and replacing the card DOM, causing the reported blinking.
     function tickCountdowns(){
       const now=new Date();
-      const expected=items.filter(i=>!i.completed && i.due>=now).sort((a,b)=>a.due-b.due).slice(0,4).map(i=>String(i.idx));
+      const expected=overviewItems(now,sortSel.value).map(i=>String(i.idx));
       const current=Array.from(grid.querySelectorAll('.card')).map(el=>el.dataset.idx);
       // Rebuild when a top-four deadline expires so the next task takes its place.
       if(expected.length!==current.length || expected.some((id,k)=>id!==current[k])){
@@ -821,7 +831,16 @@
 
     // ===== UI listeners =====
     ['change','input'].forEach(ev=>{ hideDone.addEventListener(ev,render); sortSel.addEventListener(ev,render); });
-    addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; form.reset(); $('#fDue').value=defaultDueTime(); open('Add a deadline'); });
+    // One deadline form for both the global Add button and contextual group Add buttons.
+    // The group must be assigned AFTER open(), which refreshes the group's options.
+    function openNewDeadline(groupId=''){
+      editing=-1;
+      completeBtn.style.display='none';deleteBtn.style.display='none';
+      form.reset();$('#fDue').value=defaultDueTime();
+      open('Add a deadline');
+      $('#fGroup').value=groups.some(g=>g.id===groupId)?groupId:'';
+    }
+    addBtn.addEventListener('click',()=>openNewDeadline());
     cancel.addEventListener('click',close);
     $('#fUrl').addEventListener('input', e => e.target.setCustomValidity(''));
     modal.addEventListener('click',e=>{ if(e.target===modal) close(); });
@@ -974,6 +993,7 @@
       const btn=e.target.closest('[data-group-action]');if(!btn)return;
       const id=btn.dataset.groupId;
       if(btn.dataset.groupAction==='edit')openGroupEditor(id);
+      else if(btn.dataset.groupAction==='add' && groups.some(g=>g.id===id))openNewDeadline(id);
       else if(btn.dataset.groupAction==='toggle')toggleGroup(id);
     });
     $('#ungroupedToggle').addEventListener('click',()=>toggleGroup(UNGROUPED_KEY));
@@ -1037,6 +1057,20 @@
         console.assert(!!GROUP_ICONS.conference && !!GROUP_ICONS.journal && !!GROUP_ICONS.article, 'academic icons available');
         console.assert(defaultDueTime(new Date('2026-10-12T08:30:00')).endsWith('T23:59'), 'new deadlines default to 11:59 PM local time');
         console.assert(expandedGroupId===null && $('#ungroupedPanel').hidden, 'all group accordions initially collapsed');
+        // Overview keeps the nearest four, then applies the selected sort to those four.
+        const testNow=new Date('2026-10-12T00:00:00Z');
+        const sampleOverview=[
+          {idx:1,name:'Zulu',due:new Date('2026-10-13T00:00:00Z'),completed:false},
+          {idx:2,name:'Alpha',due:new Date('2026-10-14T00:00:00Z'),completed:false},
+          {idx:3,name:'Delta',due:new Date('2026-10-15T00:00:00Z'),completed:false},
+          {idx:4,name:'Bravo',due:new Date('2026-10-16T00:00:00Z'),completed:false},
+          {idx:5,name:'Aardvark',due:new Date('2026-10-17T00:00:00Z'),completed:false},
+          {idx:6,name:'Completed',due:new Date('2026-10-12T12:00:00Z'),completed:true}
+        ];
+        console.assert(overviewItems(testNow,'soon',sampleOverview).map(i=>i.idx).join(',')==='1,2,3,4', 'overview shows four nearest active deadlines');
+        console.assert(overviewItems(testNow,'name',sampleOverview).map(i=>i.idx).join(',')==='2,4,3,1', 'overview A-Z sorts the four nearest deadlines');
+        console.assert(overviewItems(testNow,'name',sampleOverview).every(i=>i.idx!==5 && i.idx!==6), 'overview does not include later or completed deadlines');
+        console.assert(overviewItems(testNow,'soon',[]).length===0, 'overview handles no deadlines');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
