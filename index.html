@@ -96,12 +96,30 @@
     .section-note{font-size:12px;color:var(--muted);margin:3px 0 0}
     .section-count{font-size:11px;color:var(--muted);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 9px}
     .separator{border:none;border-top:1px solid rgba(255,255,255,.10);margin:26px 0}
-    .group-section{margin:22px 0 32px}
+    .group-section{margin:0 0 10px;scroll-margin-top:150px}
+    .group-accordion{display:flex;align-items:center;gap:8px;padding:5px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(140deg,rgba(255,255,255,.075),rgba(255,255,255,.035));border-radius:15px;transition:border-color .18s,background .18s}
+    .group-accordion:hover{border-color:rgba(147,197,253,.23);background:rgba(255,255,255,.085)}
+    .group-accordion:has(.group-toggle[aria-expanded="true"]){border-color:rgba(147,197,253,.32);border-bottom-left-radius:12px;border-bottom-right-radius:12px}
+    .group-toggle{display:flex;align-items:center;text-align:left;gap:11px;flex:1;min-width:0;border:none;background:transparent;color:var(--txt);padding:7px 9px;border-radius:11px;cursor:pointer;font:inherit}
+    .group-toggle:hover{background:rgba(255,255,255,.045)}
+    .group-toggle:focus-visible{outline:2px solid #93c5fd;outline-offset:1px}
+    .group-toggle .section-heading{flex:1;min-width:0}
+    .group-toggle .section-title{font-size:14px}
+    .group-toggle .section-note{font-size:11px}
+    .group-chevron{width:17px;height:17px;color:#b9c6ff;flex:none;transition:transform .18s}
+    .group-toggle[aria-expanded="true"] .group-chevron{transform:rotate(180deg)}
+    .accordion-panel{padding:15px 2px 10px;animation:accordion-appear .16s ease}
+    .accordion-panel[hidden]{display:none}
+    @keyframes accordion-appear{from{opacity:.5;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+    @media(prefers-reduced-motion:reduce){.accordion-panel{animation:none}.group-chevron{transition:none}}
     .group-mark{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:12px;color:var(--group-color,#93c5fd);background:color-mix(in srgb,var(--group-color,#93c5fd) 13%,transparent);border:1px solid color-mix(in srgb,var(--group-color,#93c5fd) 32%,transparent)}
     .group-mark svg,.group-tag svg,.icon-choice svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .group-tag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.3px;border-radius:7px;padding:4px 7px;color:var(--group-color,#93c5fd);background:color-mix(in srgb,var(--group-color,#93c5fd) 12%,transparent);border:1px solid color-mix(in srgb,var(--group-color,#93c5fd) 33%,transparent);max-width:100%;white-space:nowrap}
     .group-tag svg{width:12px;height:12px}
-    .badge-line{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-height:22px;padding-right:88px}
+    .badge-line{display:flex;align-items:center;gap:7px;min-height:22px;padding-right:88px}
+    .status{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-height:21px}
+    .status .status-copy{display:inline-flex;align-items:center;gap:5px}
+    .status .group-tag{margin-left:2px}
     .group-controls{display:flex;align-items:center;gap:7px}
     .mini-btn{border:1px solid rgba(255,255,255,.13);border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);padding:7px 10px;cursor:pointer;font:inherit;font-size:12px}
     .mini-btn:hover,.mini-btn:focus-visible{color:var(--txt);background:rgba(255,255,255,.12)}
@@ -183,11 +201,16 @@
       <div id="grid" class="grid" role="list"></div>
     </section>
     <hr class="separator"/>
-    <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Keep related countdowns together</p></div></div>
+    <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Collapsed by default — expand a group when you need its deadlines</p></div></div>
     <div id="groupSections"></div>
-    <section id="ungroupedSection" class="group-section" aria-labelledby="ungroupedTitle">
-      <div class="section-head"><div class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><div><h3 id="ungroupedTitle" class="section-title">Ungrouped</h3><p class="section-note">Deadlines without a group</p></div></div><span id="ungroupedCount" class="section-count"></span></div>
-      <div id="ungroupedGrid" class="grid" role="list"></div>
+    <section id="ungroupedSection" class="group-section" data-group-id="__ungrouped__" aria-label="Ungrouped deadlines">
+      <div class="group-accordion">
+        <button id="ungroupedToggle" type="button" class="group-toggle" data-group-action="toggle" data-group-id="__ungrouped__" aria-expanded="false" aria-controls="ungroupedPanel">
+          <span class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><span><span class="section-title" style="display:block">Ungrouped</span><span class="section-note" id="ungroupedCount">0 deadlines</span></span></span>
+          <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
+      <div id="ungroupedPanel" class="accordion-panel" role="region" aria-label="Ungrouped countdowns" hidden><div id="ungroupedGrid" class="grid" role="list"></div></div>
     </section>
   </main>
 
@@ -215,7 +238,7 @@
       <h3 id="groupModalTitle" style="margin:0 0 13px">Create a group</h3>
       <form id="groupForm" class="f">
         <label>Group name <input id="groupName" maxlength="60" required placeholder="e.g., PhD Research"/></label>
-        <div><span class="choice-label">Choose an icon</span><div id="groupIcons" class="icon-options" role="group" aria-label="Group icon"></div></div>
+        <div><span class="choice-label">Choose an icon · including conferences, journals and research</span><div id="groupIcons" class="icon-options" role="group" aria-label="Group icon"></div></div>
         <div><span class="choice-label">Choose a colour</span><div id="groupColors" class="color-options" role="group" aria-label="Group colour"></div></div>
         <p class="muted-help" id="groupBadgePreview">Your badge preview will appear here.</p>
         <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
@@ -287,9 +310,30 @@
       target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
       layers:'<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/>',
       heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
-      star:'<path d="m12 2 3.1 6.3L22 9.3l-5 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7-5-4.9 6.9-1Z"/>'
+      star:'<path d="m12 2 3.1 6.3L22 9.3l-5 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7-5-4.9 6.9-1Z"/>',
+      conference:'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M12 16v5m-5 0h10M7 12l3-3 3 2 4-5"/>',
+      journal:'<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15M6 9h3m-3 4h3m6-4h3m-3 4h3"/>',
+      article:'<path d="M6 2h9l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm9 0v6h5M8 12h8M8 16h8M8 19h5"/>',
+      presentation:'<path d="M3 3h18v13H3zM12 16v5M7 21h10M7 8h4m-4 4 3-3 3 2 4-4"/>',
+      podium:'<path d="M5 20h14M8 20v-7h8v7M12 13V6m-4 4 4-4 4 4M8 3h8"/>',
+      microphone:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5m-4 0h8"/>',
+      university:'<path d="m2 9 10-6 10 6M4 10h16M6 10v9m4-9v9m4-9v9m4-9v9M3 21h18"/>',
+      library:'<path d="M4 4h4v16H4zM10 4h4v16h-4zM16 6l4-1 3 15-4 1zM3 21h19"/>',
+      award:'<circle cx="12" cy="8" r="5"/><path d="m8 12-2 9 6-3 6 3-2-9"/>',
+      bookmark:'<path d="M5 3h14v19l-7-5-7 5z"/>',
+      microscope:'<path d="m11 3 5 5-3 3-5-5 3-3Zm-2 7-3 3m5-2 3 3M8 18a5 5 0 0 0 9-4M5 21h15M8 18v3"/>',
+      atom:'<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(120 12 12)"/>',
+      brain:'<path d="M12 6a4 4 0 0 0-8 1 4 4 0 0 0 0 7 4 4 0 0 0 8 4V6Zm0 0a4 4 0 0 1 8 1 4 4 0 0 1 0 7 4 4 0 0 1-8 4M9 10l3 2 3-2M9 15l3-3 3 3"/>',
+      globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-5 5-5 13 0 18M12 3c5 5 5 13 0 18"/>',
+      network:'<circle cx="12" cy="4" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="m11 6-5 11m7-11 5 11M7 19h10"/>',
+      clipboard:'<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 12h6m-6 4h6"/>',
+      lightbulb:'<path d="M9 18h6m-5 3h4m-5-6c-2-2-3-4-3-6a6 6 0 1 1 12 0c0 2-1 4-3 6l-1 3h-4z"/>',
+      newspaper:'<path d="M4 4h15v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Zm15 5h2v10a2 2 0 0 1-2 2M7 8h5v5H7zm8 1h2m-2 3h2M7 16h10"/>',
+      pencil:'<path d="m4 17-1 4 4-1L20 7l-3-3L4 17Zm10-10 3 3"/>',
+      certificate:'<rect x="3" y="3" width="18" height="17" rx="2"/><path d="M7 8h10M7 12h6m4 2-2 6 3-1 3 1-2-6"/>',
+      headphones:'<path d="M4 14V12a8 8 0 0 1 16 0v2M4 14h4v7H6a2 2 0 0 1-2-2zm12 0h4v5a2 2 0 0 1-2 2h-2z"/>'
     };
-    const GROUP_COLORS = ['#93c5fd','#c4b5fd','#6ee7b7','#f9a8d4','#fdba74','#fcd34d','#67e8f9','#cbd5e1'];
+    const GROUP_COLORS = ['#93c5fd','#7dd3fc','#a5b4fc','#c4b5fd','#d8b4fe','#f0abfc','#67e8f9','#5eead4','#6ee7b7','#94a3b8'];
     const safeIcon = value => Object.prototype.hasOwnProperty.call(GROUP_ICONS, value) ? value : 'folder';
     const safeColor = value => GROUP_COLORS.includes(value) ? value : GROUP_COLORS[0];
     const iconSvg = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${GROUP_ICONS[safeIcon(name)]}</svg>`;
@@ -307,7 +351,9 @@
     const saveGroups = value => { try{localStorage.setItem(GROUP_STORAGE,JSON.stringify(sanitizeGroups(value)));}catch(_){} };
     let groups = loadGroups();
     let editingGroupId = null, selectedIcon = 'folder', selectedColor = GROUP_COLORS[0];
-    const collapsedGroups = new Set();
+    // Only one accordion is open at a time; all start closed on each page load.
+    const UNGROUPED_KEY = '__ungrouped__';
+    let expandedGroupId = null;
 
     // Formatters
     const P = (s) => s ? new Date(s) : null;
@@ -340,6 +386,7 @@
 
     const hint = (p) => p.d ? `${p.d} day${p.d === 1 ? '' : 's'} left` : p.h ? `${p.h} hour${p.h === 1 ? '' : 's'} left` : p.m ? `${p.m} min${p.m === 1 ? '' : 's'} left` : `${p.x} sec${p.x === 1 ? '' : 's'} left`;
     const toLocal = (iso) => { const d = new Date(iso); const z = (n)=>String(n).padStart(2,'0'); return isNaN(d) ? '' : `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
+    const defaultDueTime = (date=new Date()) => { const d=new Date(date); d.setHours(23,59,0,0); return toLocal(d.toISOString()); };
 
     // Cloud sync helpers (Firestore)
     function hhmm(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch(_){return '';} }
@@ -505,7 +552,7 @@
       }
 
       return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
-        <div class="badge-line"><span class="badge">${badge}</span>${groupFor(it) ? groupBadge(groupFor(it)) : ''}</div>
+        <div class="badge-line"><span class="badge">${badge}</span></div>
         <div class="actions">
           ${it.url ? `<a class="icon link-icon" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" title="Open link in new tab" aria-label="Open link for ${esc(it.name)}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : ''}
           <button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button>
@@ -513,34 +560,63 @@
         <div class="name">${esc(it.name)}</div>
         <div class="deadline ${dateClass}">Due: ${fmt(it.due)}</div>
         <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
-        <div class="status"><span class="dot" style="background:${c}"></span>${status}</div>
+        <div class="status"><span class="status-copy"><span class="dot" style="background:${c}"></span>${status}</span>${groupFor(it) ? groupBadge(groupFor(it)) : ''}</div>
         ${per==null ? '' : `<div class="progress"><span style="width:${clamp(per,0,100).toFixed(1)}%"></span></div>`}
       </article>`;
     }
 
+    const groupChevron = '<svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     function render(){
+      const focus = document.activeElement?.closest?.('[data-group-action="toggle"]');
+      const focusId = focus?.dataset.groupId;
       const now=new Date();
-      const active = items.filter(i=>!i.completed && i.due.getTime()>=now.getTime()).sort((a,b)=>a.due-b.due);
+      const active=items.filter(i=>!i.completed && i.due.getTime()>=now.getTime()).sort((a,b)=>a.due-b.due);
       const overview=active.slice(0,4);
-      grid.innerHTML = overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
+      grid.innerHTML=overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
       $('#overviewCount').textContent=overview.length+' / 4';
       sortItems(sortSel.value);
       const sectionCards=list=>list.map(i=>card(i,now,hideDone.checked)).join('');
       groupSections.innerHTML=groups.map(g=>{
         const all=items.filter(i=>i.groupId===g.id);
         const visible=all.filter(i=>!i.completed || !hideDone.checked);
-        const folded=collapsedGroups.has(g.id);
+        const expanded=expandedGroupId===g.id;
+        const panelId='group-panel-'+g.id.replace(/[^a-zA-Z0-9_-]/g,'-');
         return `<section class="group-section" data-group-id="${esc(g.id)}" aria-label="${esc(g.name)}">
-          <div class="section-head"><div class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><div>
-          <h3 class="section-title">${esc(g.name)}</h3><p class="section-note">${all.length} ${all.length===1?'deadline':'deadlines'}</p></div></div>
-          <div class="group-controls"><button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button><button class="mini-btn" type="button" data-group-action="toggle" data-group-id="${esc(g.id)}" aria-expanded="${!folded}" aria-label="${folded?'Expand':'Collapse'} ${esc(g.name)}">${folded?'Show':'Hide'}</button></div></div>
-          ${folded?'':`<div class="grid" role="list">${visible.length?sectionCards(visible):'<div class="empty-state">No visible deadlines in this group.</div>'}</div>`}
+          <div class="group-accordion">
+            <button class="group-toggle" type="button" data-group-action="toggle" data-group-id="${esc(g.id)}" aria-expanded="${expanded}" aria-controls="${esc(panelId)}" aria-label="${expanded?'Collapse':'Expand'} ${esc(g.name)}">
+              <span class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><span>
+              <span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${all.length} ${all.length===1?'deadline':'deadlines'}</span></span></span>
+              ${groupChevron}
+            </button>
+            <button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button>
+          </div>
+          <div id="${esc(panelId)}" class="accordion-panel" role="region" aria-label="${esc(g.name)} countdowns" ${expanded?'':'hidden'}>
+            ${expanded?`<div class="grid" role="list">${visible.length?sectionCards(visible):'<div class="empty-state">No visible deadlines in this group.</div>'}</div>`:''}
+          </div>
         </section>`;
       }).join('') || '<div class="empty-state empty-groups">Create a group to organise your deadlines. You can pick an icon and a colour.</div>';
       const misc=items.filter(i=>!groupFor(i));
       const miscVisible=misc.filter(i=>!i.completed || !hideDone.checked);
       $('#ungroupedCount').textContent=misc.length+' '+(misc.length===1?'deadline':'deadlines');
-      ungroupedGrid.innerHTML=miscVisible.length?sectionCards(miscVisible):'<div class="empty-state">No ungrouped deadlines.</div>';
+      const ungroupedExpanded=expandedGroupId===UNGROUPED_KEY;
+      $('#ungroupedToggle').setAttribute('aria-expanded',String(ungroupedExpanded));
+      $('#ungroupedToggle').setAttribute('aria-label',(ungroupedExpanded?'Collapse':'Expand')+' Ungrouped');
+      $('#ungroupedPanel').hidden=!ungroupedExpanded;
+      ungroupedGrid.innerHTML=ungroupedExpanded?(miscVisible.length?sectionCards(miscVisible):'<div class="empty-state">No ungrouped deadlines.</div>'):'';
+      // Refreshing the ticking countdowns must not steal keyboard focus from an accordion toggle.
+      if(focusId && focusId!==UNGROUPED_KEY){
+        const replacement=Array.from(groupSections.querySelectorAll('[data-group-action="toggle"]')).find(el=>el.dataset.groupId===focusId);
+        replacement?.focus({preventScroll:true});
+      }
+    }
+    function revealGroup(groupId){
+      expandedGroupId=groups.some(g=>g.id===groupId) ? groupId : UNGROUPED_KEY;
+      render();
+      const section=Array.from(document.querySelectorAll('.group-section')).find(el=>el.dataset.groupId===expandedGroupId);
+      if(section){
+        const scroll=()=>section.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+        requestAnimationFrame(scroll);
+      }
     }
 
     // First render, then tick every second
@@ -560,7 +636,7 @@
 
     // ===== UI listeners =====
     ['change','input'].forEach(ev=>{ hideDone.addEventListener(ev,render); sortSel.addEventListener(ev,render); });
-    addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; open('Add a deadline'); });
+    addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; form.reset(); $('#fDue').value=defaultDueTime(); open('Add a deadline'); });
     cancel.addEventListener('click',close);
     $('#fUrl').addEventListener('input', e => e.target.setCustomValidity(''));
     modal.addEventListener('click',e=>{ if(e.target===modal) close(); });
@@ -600,7 +676,7 @@
       // Cloud save uses the RAW stored object array, which sanitizeItems processes
       save(stored); cloudSave(stored, true).catch(()=>{}); 
 
-      items = rebuild(); close(); render(); updateSyncUI();
+      items = rebuild(); close(); revealGroup(groupId); updateSyncUI();
     });
 
     // Grid: edit only
@@ -691,15 +767,21 @@
       const count=(load()??[]).filter(it=>it.groupId===g.id).length;
       if(!confirm(`Delete group "${g.name}"? ${count} associated deadline${count===1?'':'s'} will become ungrouped; none will be deleted.`))return;
       const stored=(load()??[]).map(it=>it.groupId===g.id?({...it,groupId:undefined}):it);
-      save(stored);groups=groups.filter(x=>x.id!==g.id);saveGroups(groups);collapsedGroups.delete(g.id);
+      save(stored);groups=groups.filter(x=>x.id!==g.id);saveGroups(groups);if(expandedGroupId===g.id)expandedGroupId=null;
       cloudSave(stored,true);items=rebuild();closeGroupEditor();refreshGroupSelect();render();
     });
+    function toggleGroup(id){
+      expandedGroupId=expandedGroupId===id ? null : id;
+      render();
+    }
     groupSections.addEventListener('click',e=>{
       const btn=e.target.closest('[data-group-action]');if(!btn)return;
       const id=btn.dataset.groupId;
       if(btn.dataset.groupAction==='edit')openGroupEditor(id);
-      else if(btn.dataset.groupAction==='toggle'){collapsedGroups.has(id)?collapsedGroups.delete(id):collapsedGroups.add(id);render();}
+      else if(btn.dataset.groupAction==='toggle')toggleGroup(id);
     });
+    $('#ungroupedToggle').addEventListener('click',()=>toggleGroup(UNGROUPED_KEY));
+
 
     // ===== Lightweight self tests =====
     (function selfTests(){
@@ -747,6 +829,10 @@
         console.assert(sanitizeGroups([{id:'1',name:'G',icon:'bad',color:'red'}])[0].icon==='folder', 'invalid group icon rejected');
         console.assert(sanitizeGroups([{id:'1',name:'G',icon:'leaf',color:'red'}])[0].color===GROUP_COLORS[0], 'invalid group colour rejected');
         console.assert(sanitizeGroups([{id:'1',name:'First'},{id:'1',name:'Duplicate'}]).length===1, 'duplicate group IDs removed');
+        console.assert(!GROUP_COLORS.includes('#fdba74') && !GROUP_COLORS.includes('#fcd34d') && !GROUP_COLORS.includes('#ef4444'), 'warm deadline hues excluded from group palette');
+        console.assert(!!GROUP_ICONS.conference && !!GROUP_ICONS.journal && !!GROUP_ICONS.article, 'academic icons available');
+        console.assert(defaultDueTime(new Date('2026-10-12T08:30:00')).endsWith('T23:59'), 'new deadlines default to 11:59 PM local time');
+        console.assert(expandedGroupId===null && $('#ungroupedPanel').hidden, 'all group accordions initially collapsed');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
