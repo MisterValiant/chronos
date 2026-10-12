@@ -73,7 +73,12 @@
     .progress>span{display:block;height:100%;background:linear-gradient(90deg,#6ee7b7,#93c5fd);width:0}
     .actions{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:2}
     .btn,.icon{appearance:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.10);color:var(--txt);padding:8px 10px;border-radius:10px;cursor:pointer}
-    .icon:hover{background:rgba(255,255,255,.16)}.danger{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35)}
+    .icon:hover{background:rgba(255,255,255,.16)}
+    .link-icon{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+    .link-icon:focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+    .link-icon svg{width:17px;height:17px;display:block}
+    .card:has(.link-icon) .name{max-width:calc(100% - 105px)}
+    .danger{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35)}
     .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,8,20,.55);backdrop-filter:blur(6px);z-index:50}
     .modal.show{display:grid}.sheet{width:min(560px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.14);border-radius:18px;box-shadow:var(--shadow);padding:18px}
     .f{display:grid;gap:10px}.f label{font-size:12px;color:var(--muted)}.f input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit}
@@ -119,6 +124,7 @@
         <label>Project name <input id="fName" name="name" required placeholder="e.g., Final Report"/></label>
         <label>Due date/time <input id="fDue" name="due" type="datetime-local" required/></label>
         <label>Start date/time (optional) <input id="fStart" name="start" type="datetime-local"/></label>
+        <label>URL (optional) <input id="fUrl" name="url" type="url" maxlength="2048" placeholder="https://example.com" autocomplete="url"/></label>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
           <button type="button" id="cancel" class="btn">Cancel</button>
           <button type="button" id="delete" class="btn danger" style="border:none;display:none">Delete</button>
@@ -182,6 +188,16 @@
     const pct = (s,e,n) => (!s||!e) ? null : (n<=s?0 : (n>=e?100 : ((n-s)/(e-s))*100));
     const color = (ms) => ms < 0 ? 'var(--danger)' : (ms/36e5<=24 ? 'var(--danger)' : ms/36e5<=72 ? 'var(--warn)' : 'var(--ok)');
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    // Permit only ordinary web links. Never render javascript:, data:, or file: URLs.
+    function validWebUrl(value){
+      if(typeof value !== 'string') return null;
+      const raw = value.trim();
+      if(!raw || raw.length > 2048) return null;
+      try {
+        const parsed = new URL(raw);
+        return (parsed.protocol === 'https:' || parsed.protocol === 'http:') && parsed.hostname && !parsed.username && !parsed.password ? parsed.href : null;
+      } catch (_) { return null; }
+    }
 
     // Split milliseconds into d/h/m/s (absolute, no sign)
     const parts = (ms) => {
@@ -232,6 +248,7 @@
           const due = String(it?.due ?? '').trim();
           const start = String(it?.start ?? '').trim();
           const completed = !!it?.completed;
+          const url = validWebUrl(it?.url);
           
           // Use a pristine object and only copy explicitly allowed fields.
           // This ensures no unexpected keys from the local storage object leak through.
@@ -261,6 +278,8 @@
           if (completed === true) {
             item.completed = true;
           }
+          // Optional link, included only when it is safe and non-empty.
+          if (url) item.url = url;
 
           return item;
         }).filter(it => it !== null); // Filter out items that failed validation
@@ -275,7 +294,8 @@
         name:i.name, 
         start:i.start?.toISOString?.(), // converts Date to string or undefined if null
         due:i.due?.toISOString?.(), 
-        completed:!!i.completed 
+        completed:!!i.completed,
+        url:i.url
       }));
       
       const safe = sanitizeItems(dataForSanitize);
@@ -312,7 +332,7 @@
 
     function rebuild(){
       const src = load() ?? DEFAULTS;
-      return src.map((e,i)=>({ idx:i, name:e.name, start:P(e.start), due:P(e.due), completed:!!e.completed })).filter(x=>x.due);
+      return src.map((e,i)=>({ idx:i, name:e.name, start:P(e.start), due:P(e.due), completed:!!e.completed, url:validWebUrl(e.url) })).filter(x=>x.due);
     }
     let items = rebuild();
 
@@ -340,7 +360,10 @@
 
       return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
         <div class="badge">${badge}</div>
-        <div class="actions"><button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button></div>
+        <div class="actions">
+          ${it.url ? `<a class="icon link-icon" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" title="Open link in new tab" aria-label="Open link for ${esc(it.name)}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : ''}
+          <button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button>
+        </div>
         <div class="name">${esc(it.name)}</div>
         <div class="deadline ${dateClass}">Due: ${fmt(it.due)}</div>
         <div class="timer">${box(p.d,'Days')}${box(p.h,'Hours')}${box(p.m,'Mins')}${box(p.x,'Secs')}</div>
@@ -365,15 +388,21 @@
     ['change','input'].forEach(ev=>{ hideDone.addEventListener(ev,render); sortSel.addEventListener(ev,render); });
     addBtn.addEventListener('click',()=>{ editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; open('Add a deadline'); });
     cancel.addEventListener('click',close);
+    $('#fUrl').addEventListener('input', e => e.target.setCustomValidity(''));
     modal.addEventListener('click',e=>{ if(e.target===modal) close(); });
     window.addEventListener('keydown',e=>{ if(e.key==='Escape' && modal.classList.contains('show')) close(); });
 
     // Form submit (save)
     form.addEventListener('submit',e=>{
       e.preventDefault();
-      const name = form.name.value ? form.name.value.trim() : '';
-      const due = form.due.value ? new Date(form.due.value) : null;
-      const start = form.start.value ? new Date(form.start.value) : null;
+      const name = $('#fName').value.trim();
+      const due = $('#fDue').value ? new Date($('#fDue').value) : null;
+      const start = $('#fStart').value ? new Date($('#fStart').value) : null;
+      const urlField = $('#fUrl');
+      const urlInput = urlField.value.trim();
+      const url = validWebUrl(urlInput);
+      urlField.setCustomValidity(urlInput && !url ? 'Enter a full http:// or https:// link.' : '');
+      if (!urlField.reportValidity()) return;
       // FIX: Replaced alert() with console.error()
       if(!name || !due || isNaN(due)) { console.error('Form validation failed: Enter a valid name and due date/time.'); return; }
       const stored = load() ?? [];
@@ -384,7 +413,8 @@
           name, 
           // Store start/due as ISO strings if they exist. Use null for fields that are empty.
           start: start && !isNaN(start) ? start.toISOString() : undefined, 
-          due: due.toISOString(), 
+          due: due.toISOString(),
+          ...(url ? {url} : {}),
           // Preserve completed status from previous state
           completed: !!prev.completed 
       }; 
@@ -411,6 +441,7 @@
         document.getElementById('fName').value = ev.name || '';
         document.getElementById('fDue').value = ev.due ? toLocal(ev.due) : '';
         document.getElementById('fStart').value = ev.start ? toLocal(ev.start) : '';
+        document.getElementById('fUrl').value = ev.url || '';
         completeBtn.style.display = ''; deleteBtn.style.display = '';
         deleteArmed=false; deleteBtn.textContent='Delete';
         if(ev.completed){ completeBtn.textContent='Undo Complete'; completeBtn.title='Mark as incomplete (keep due date)'; completeMode='undo'; }
@@ -486,6 +517,17 @@
         console.assert(hint({d:0,h:1,m:0,x:0}).includes('1 hour'), 'hint hour singular');
         console.assert(hint({d:0,h:0,m:1,x:0}).includes('1 min'), 'hint minute singular');
         console.assert(hint({d:0,h:0,m:0,x:1}).includes('1 sec'), 'hint second singular');
+        // Link validation and cloud payload preservation tests
+        console.assert(validWebUrl('https://example.com/docs') === 'https://example.com/docs', 'accepts HTTPS links');
+        console.assert(validWebUrl('http://example.com/') === 'http://example.com/', 'accepts HTTP links');
+        console.assert(validWebUrl('javascript:alert(1)') === null, 'rejects javascript links');
+        console.assert(validWebUrl('data:text/html,evil') === null, 'rejects data links');
+        console.assert(validWebUrl('not-a-url') === null, 'rejects incomplete URLs');
+        console.assert(validWebUrl('') === null, 'URL may be empty');
+        const sample = sanitizeItems([{name:'Linked task',due:'2026-10-12T13:00:00+04:00',url:'https://example.com/docs'}]);
+        console.assert(sample.length===1 && sample[0].url==='https://example.com/docs', 'link is preserved for cloud sync');
+        const noLink = sanitizeItems([{name:'Unlinked task',due:'2026-10-12T13:00:00+04:00',url:''}]);
+        console.assert(noLink.length===1 && !('url' in noLink[0]), 'empty URL omitted from cloud payload');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
