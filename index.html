@@ -81,13 +81,42 @@
     .danger{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35)}
     .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(5,8,20,.55);backdrop-filter:blur(6px);z-index:50}
     .modal.show{display:grid}.sheet{width:min(560px,92vw);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.14);border-radius:18px;box-shadow:var(--shadow);padding:18px}
-    .f{display:grid;gap:10px}.f label{font-size:12px;color:var(--muted)}.f input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit}
+    .f{display:grid;gap:10px}.f label{font-size:12px;color:var(--muted)}.f input,.f select{background:#222849;border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit;width:100%}
     .foot{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;border-radius:14px;padding:8px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);font-size:12px}
     .signin-btn{background:white;color:#333;font-weight:600;display:inline-flex;align-items:center;gap:6px}
     .signin-btn svg{width:16px;height:16px}
     .dot-sm{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:8px;vertical-align:middle;background:#64748b;box-shadow:0 0 0 2px rgba(255,255,255,.08)}
     .dot-sm.on{background:var(--ok)}
     .avatar{width:20px;height:20px;border-radius:999px;object-fit:cover;margin-right:8px;border:1px solid rgba(255,255,255,.25);vertical-align:middle}
+    /* Minimal group workspace */
+    .section{margin:8px 0 30px}
+    .section-head{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
+    .section-heading{display:flex;align-items:center;gap:10px;min-width:0}
+    .section-title{font-size:17px;font-weight:700;margin:0;letter-spacing:.1px}
+    .section-note{font-size:12px;color:var(--muted);margin:3px 0 0}
+    .section-count{font-size:11px;color:var(--muted);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 9px}
+    .separator{border:none;border-top:1px solid rgba(255,255,255,.10);margin:26px 0}
+    .group-section{margin:22px 0 32px}
+    .group-mark{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex:none;border-radius:12px;color:var(--group-color,#93c5fd);background:color-mix(in srgb,var(--group-color,#93c5fd) 13%,transparent);border:1px solid color-mix(in srgb,var(--group-color,#93c5fd) 32%,transparent)}
+    .group-mark svg,.group-tag svg,.icon-choice svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .group-tag{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.3px;border-radius:7px;padding:4px 7px;color:var(--group-color,#93c5fd);background:color-mix(in srgb,var(--group-color,#93c5fd) 12%,transparent);border:1px solid color-mix(in srgb,var(--group-color,#93c5fd) 33%,transparent);max-width:100%;white-space:nowrap}
+    .group-tag svg{width:12px;height:12px}
+    .badge-line{display:flex;align-items:center;flex-wrap:wrap;gap:7px;min-height:22px;padding-right:88px}
+    .group-controls{display:flex;align-items:center;gap:7px}
+    .mini-btn{border:1px solid rgba(255,255,255,.13);border-radius:9px;background:rgba(255,255,255,.05);color:var(--muted);padding:7px 10px;cursor:pointer;font:inherit;font-size:12px}
+    .mini-btn:hover,.mini-btn:focus-visible{color:var(--txt);background:rgba(255,255,255,.12)}
+    .empty-state{padding:26px 20px;border:1px dashed rgba(255,255,255,.16);background:rgba(255,255,255,.025);border-radius:16px;text-align:center;color:var(--muted);font-size:13px}
+    .group-sheet{max-height:min(88vh,840px);overflow-y:auto}
+    .choice-label{color:var(--muted);font-size:12px;margin:12px 0 7px;display:block}
+    .icon-options,.color-options{display:flex;flex-wrap:wrap;gap:8px}
+    .icon-choice,.color-choice{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.045);color:#cbd5e1}
+    .icon-choice:hover,.color-choice:hover{background:rgba(255,255,255,.12)}
+    .icon-choice.selected,.color-choice.selected{border-color:#e8ecff;box-shadow:0 0 0 2px rgba(147,197,253,.2);background:rgba(255,255,255,.10)}
+    .color-choice::before{content:'';width:21px;height:21px;border-radius:999px;background:var(--swatch);box-shadow:0 0 12px color-mix(in srgb,var(--swatch) 25%,transparent)}
+    .group-sheet .muted-help{font-size:12px;color:var(--muted);margin:7px 0 0}
+    .empty-groups{margin-top:12px}
+    @media(max-width:520px){.wrap{padding:14px}.section-title{font-size:16px}.card .name{font-size:18px}}
+
   </style>
 </head>
 <body>
@@ -104,6 +133,7 @@
         <label class="pill" style="cursor:pointer"><input type="checkbox" id="hideDone" checked style="margin-right:8px">Hide completed</label>
         <label class="pill">Sort <select id="sort" class="select"><option value="soon">Soonest</option><option value="name">A→Z</option></select></label>
         <button id="add" class="pill" style="color:white">+ Add</button>
+        <button id="addGroup" class="pill" type="button">+ Group</button>
         <button id="signin" class="pill signin-btn" type="button" aria-label="Sign in">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFCA28"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           Sign in
@@ -115,7 +145,19 @@
     </div>
   </header>
 
-  <main><div id="grid" class="grid" role="list"></div></main>
+  <main>
+    <section class="section" aria-labelledby="overviewTitle">
+      <div class="section-head"><div><h2 id="overviewTitle" class="section-title">Up next</h2><p class="section-note">Your four nearest active deadlines</p></div><span id="overviewCount" class="section-count">0 deadlines</span></div>
+      <div id="grid" class="grid" role="list"></div>
+    </section>
+    <hr class="separator"/>
+    <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Keep related countdowns together</p></div></div>
+    <div id="groupSections"></div>
+    <section id="ungroupedSection" class="group-section" aria-labelledby="ungroupedTitle">
+      <div class="section-head"><div class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><div><h3 id="ungroupedTitle" class="section-title">Ungrouped</h3><p class="section-note">Deadlines without a group</p></div></div><span id="ungroupedCount" class="section-count"></span></div>
+      <div id="ungroupedGrid" class="grid" role="list"></div>
+    </section>
+  </main>
 
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="sheet">
@@ -125,11 +167,29 @@
         <label>Due date/time <input id="fDue" name="due" type="datetime-local" required/></label>
         <label>Start date/time (optional) <input id="fStart" name="start" type="datetime-local"/></label>
         <label>URL (optional) <input id="fUrl" name="url" type="url" maxlength="2048" placeholder="https://example.com" autocomplete="url"/></label>
+        <label>Group (optional) <select id="fGroup" name="groupId" class="form-select"><option value="">No group</option></select></label>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
           <button type="button" id="cancel" class="btn">Cancel</button>
           <button type="button" id="delete" class="btn danger" style="border:none;display:none">Delete</button>
           <button type="button" id="complete" class="btn">Complete</button>
           <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="groupModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="groupModalTitle">
+    <div class="sheet group-sheet">
+      <h3 id="groupModalTitle" style="margin:0 0 13px">Create a group</h3>
+      <form id="groupForm" class="f">
+        <label>Group name <input id="groupName" maxlength="60" required placeholder="e.g., PhD Research"/></label>
+        <div><span class="choice-label">Choose an icon</span><div id="groupIcons" class="icon-options" role="group" aria-label="Group icon"></div></div>
+        <div><span class="choice-label">Choose a colour</span><div id="groupColors" class="color-options" role="group" aria-label="Group colour"></div></div>
+        <p class="muted-help" id="groupBadgePreview">Your badge preview will appear here.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+          <button type="button" id="cancelGroup" class="btn">Cancel</button>
+          <button type="button" id="deleteGroup" class="btn danger" style="display:none">Delete group</button>
+          <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save group</button>
         </div>
       </form>
     </div>
@@ -169,11 +229,12 @@
     // ===== Helpers =====
     const $ = (q) => document.querySelector(q);
     const grid = $('#grid'), hideDone = $('#hideDone'), sortSel = $('#sort'), addBtn = $('#add');
+    const groupSections = $('#groupSections'), ungroupedGrid = $('#ungroupedGrid'), groupModal = $('#groupModal'), groupForm = $('#groupForm');
     const modal = $('#modal'), form = $('#form'), cancel = $('#cancel'), deleteBtn = $('#delete'), completeBtn = $('#complete'), title = $('#mTitle');
     const signInBtn = $('#signin'), signOutBtn = $('#signout'), who = $('#who'), syncEl = $('#sync');
-    const diagBtn = $('#diag');
 
     const STORAGE = 'countdown_events_v1';
+    const GROUP_STORAGE = 'chronos_groups_v1';
     let editing = -1, completeMode = 'complete';
     let deleteArmed = false; let syncing = false, lastSync = null, syncError = null;
 
@@ -181,11 +242,46 @@
     const load = () => { try { const r = localStorage.getItem(STORAGE); return r ? JSON.parse(r) : null; } catch(_) { return null; } };
     const save = (a) => { try { localStorage.setItem(STORAGE, JSON.stringify(a)); } catch(_) {} };
 
+    // Group presentation is intentionally fixed to known icons and theme colours.
+    const GROUP_ICONS = {
+      folder:'<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3z"/>',
+      book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5V4.5A2.5 2.5 0 0 1 6.5 2Z"/>',
+      graduation:'<path d="m2 10 10-5 10 5-10 5-10-5ZM6 12v5c3 3 9 3 12 0v-5M22 10v7"/>',
+      leaf:'<path d="M20 4c-9 0-15 3-15 11a5 5 0 0 0 5 5c8 0 11-6 10-16ZM5 20c2-5 6-9 11-12"/>',
+      flask:'<path d="M9 3h6M10 3v7L4 20a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2l-6-10V3M7 16h10"/>',
+      briefcase:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/>',
+      code:'<path d="m8 8-4 4 4 4m8-8 4 4-4 4m-3-13-2 18"/>',
+      calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
+      target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+      layers:'<path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/>',
+      heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>',
+      star:'<path d="m12 2 3.1 6.3L22 9.3l-5 4.9 1.2 7-6.2-3.3-6.2 3.3 1.2-7-5-4.9 6.9-1Z"/>'
+    };
+    const GROUP_COLORS = ['#93c5fd','#c4b5fd','#6ee7b7','#f9a8d4','#fdba74','#fcd34d','#67e8f9','#cbd5e1'];
+    const safeIcon = value => Object.prototype.hasOwnProperty.call(GROUP_ICONS, value) ? value : 'folder';
+    const safeColor = value => GROUP_COLORS.includes(value) ? value : GROUP_COLORS[0];
+    const iconSvg = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${GROUP_ICONS[safeIcon(name)]}</svg>`;
+    function sanitizeGroups(list){
+      if(!Array.isArray(list)) return [];
+      const seen = new Set();
+      return list.slice(0,80).map(g=>({id:String(g?.id??'').slice(0,100),name:String(g?.name??'').trim().slice(0,60),icon:safeIcon(g?.icon),color:safeColor(g?.color)}))
+        .filter(g=>g.id && g.name && !seen.has(g.id) && seen.add(g.id));
+    }
+    function groupAcronym(name){
+      const words=String(name??'').trim().split(/\s+/).filter(Boolean);
+      return words.length<=1 ? (words[0]||'') : words.map(w=>w[0].toLocaleUpperCase()).join('');
+    }
+    const loadGroups = () => { try{return sanitizeGroups(JSON.parse(localStorage.getItem(GROUP_STORAGE)||'[]'));}catch(_){return [];} };
+    const saveGroups = value => { try{localStorage.setItem(GROUP_STORAGE,JSON.stringify(sanitizeGroups(value)));}catch(_){} };
+    let groups = loadGroups();
+    let editingGroupId = null, selectedIcon = 'folder', selectedColor = GROUP_COLORS[0];
+    const collapsedGroups = new Set();
+
     // Formatters
     const P = (s) => s ? new Date(s) : null;
     const fmt = (d) => d.toLocaleString([], {year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'});
     const clamp = (n,a,b) => Math.max(a, Math.min(b,n));
-    const pct = (s,e,n) => (!s||!e) ? null : (n<=s?0 : (n>=e?100 : ((n-s)/(e-s))*100));
+    const pct = (s,e,n) => (s == null || e == null || !Number.isFinite(s) || !Number.isFinite(e) || e <= s) ? null : (n<=s?0 : (n>=e?100 : ((n-s)/(e-s))*100));
     const color = (ms) => ms < 0 ? 'var(--danger)' : (ms/36e5<=24 ? 'var(--danger)' : ms/36e5<=72 ? 'var(--warn)' : 'var(--ok)');
     const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
     // Permit only ordinary web links. Never render javascript:, data:, or file: URLs.
@@ -235,7 +331,7 @@
       if(!u) return null;
       const ref = db.collection('dashboards').doc(u.uid);
       const doc = await ref.get();
-      return doc.exists ? (doc.data().items || null) : null;
+      return doc.exists ? doc.data() : null;
     }
 
     // Sanitize payload to match strict rules (only allowed keys/types)
@@ -249,6 +345,7 @@
           const start = String(it?.start ?? '').trim();
           const completed = !!it?.completed;
           const url = validWebUrl(it?.url);
+          const groupId = String(it?.groupId??'');
           
           // Use a pristine object and only copy explicitly allowed fields.
           // This ensures no unexpected keys from the local storage object leak through.
@@ -280,11 +377,13 @@
           }
           // Optional link, included only when it is safe and non-empty.
           if (url) item.url = url;
+          if (groupId && groupId.length <= 100) item.groupId = groupId;
 
           return item;
         }).filter(it => it !== null); // Filter out items that failed validation
     }
 
+    let pendingCloudWrite = Promise.resolve();
     async function cloudSave(items, isRawData = false){
       const u = auth.currentUser;
       if(!u){ updateSyncUI(); return; }
@@ -295,7 +394,8 @@
         start:i.start?.toISOString?.(), // converts Date to string or undefined if null
         due:i.due?.toISOString?.(), 
         completed:!!i.completed,
-        url:i.url
+        url:i.url,
+        groupId:i.groupId
       }));
       
       const safe = sanitizeItems(dataForSanitize);
@@ -304,7 +404,15 @@
         syncing = true; syncError = null; updateSyncUI();
         console.log('[cloudSave] Attempting save with sanitized data:', safe.length, 'items.'); 
         // Use set to force full document overwrite, which is required by the current security rules validation strategy.
-        await db.collection('dashboards').doc(u.uid).set({ items: safe }); 
+        // Snapshot group and item data together. Serialize writes to prevent stale updates.
+        const payload = { items: safe, groups: sanitizeGroups(groups) };
+        const userId = u.uid;
+        const write = pendingCloudWrite.catch(()=>{}).then(async()=>{
+          if(auth.currentUser?.uid !== userId) return;
+          await db.collection('dashboards').doc(userId).set(payload);
+        });
+        pendingCloudWrite = write;
+        await write; 
         lastSync = Date.now();
       }catch(e){
         syncError = e;
@@ -315,8 +423,9 @@
 
     function showUser(u){
       const name = u ? (u.displayName || u.email || 'Signed in') : 'Signed out';
-      const avatar = u && u.photoURL ? `<img class="avatar" src="${u.photoURL}" alt=""/>` : '';
-      who.innerHTML = `<span class="dot-sm ${u?'on':'off'}"></span>${avatar}<span>${u?`Signed in as ${name}`:'Signed out'}</span>`;
+      const photo = u && u.photoURL ? validWebUrl(u.photoURL) : null;
+      const avatar = photo ? `<img class="avatar" src="${esc(photo)}" alt="" referrerpolicy="no-referrer"/>` : '';
+      who.innerHTML = `<span class="dot-sm ${u?'on':'off'}"></span>${avatar}<span>${u?`Signed in as ${esc(name)}`:'Signed out'}</span>`;
       signInBtn.style.display = u ? 'none' : '';
       signOutBtn.style.display = u ? '' : 'none';
       updateSyncUI();
@@ -332,12 +441,17 @@
 
     function rebuild(){
       const src = load() ?? DEFAULTS;
-      return src.map((e,i)=>({ idx:i, name:e.name, start:P(e.start), due:P(e.due), completed:!!e.completed, url:validWebUrl(e.url) })).filter(x=>x.due);
+      return (Array.isArray(src) ? src : []).map((e,i)=>({ idx:i, name:e.name, start:P(e.start), due:P(e.due), completed:!!e.completed, url:validWebUrl(e.url), groupId:e.groupId||'' }))
+        .filter(x=>x.due && Number.isFinite(x.due.getTime()));
     }
     let items = rebuild();
 
     const pri = (it,now) => it.completed ? 2 : (it.due.getTime() < now ? 0 : 1);
     const sortItems = (mode) => { const now = Date.now(); items.sort((a,b)=> pri(a,now)-pri(b,now) || (mode==='name' ? a.name.localeCompare(b.name) : a.due-b.due)); };
+    const groupFor = it => groups.find(g=>g.id===it.groupId) || null;
+    function groupBadge(g){
+      return `<span class="group-tag" style="--group-color:${safeColor(g.color)}" title="${esc(g.name)}">${iconSvg(g.icon)}<span>${esc(groupAcronym(g.name))}</span></span>`;
+    }
     const box = (n,l) => `<div class="chunk"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
 
     function card(it, now, hide){
@@ -359,7 +473,7 @@
       }
 
       return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
-        <div class="badge">${badge}</div>
+        <div class="badge-line"><span class="badge">${badge}</span>${groupFor(it) ? groupBadge(groupFor(it)) : ''}</div>
         <div class="actions">
           ${it.url ? `<a class="icon link-icon" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" title="Open link in new tab" aria-label="Open link for ${esc(it.name)}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : ''}
           <button type="button" class="icon" data-a="e" title="Edit" aria-label="Edit">✎</button>
@@ -372,7 +486,30 @@
       </article>`;
     }
 
-    function render(){ const now = new Date(); sortItems(sortSel.value); grid.innerHTML = items.map(i=>card(i,now,hideDone.checked)).join(''); }
+    function render(){
+      const now=new Date();
+      const active = items.filter(i=>!i.completed && i.due.getTime()>=now.getTime()).sort((a,b)=>a.due-b.due);
+      const overview=active.slice(0,4);
+      grid.innerHTML = overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
+      $('#overviewCount').textContent=overview.length+' / 4';
+      sortItems(sortSel.value);
+      const sectionCards=list=>list.map(i=>card(i,now,hideDone.checked)).join('');
+      groupSections.innerHTML=groups.map(g=>{
+        const all=items.filter(i=>i.groupId===g.id);
+        const visible=all.filter(i=>!i.completed || !hideDone.checked);
+        const folded=collapsedGroups.has(g.id);
+        return `<section class="group-section" data-group-id="${esc(g.id)}" aria-label="${esc(g.name)}">
+          <div class="section-head"><div class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><div>
+          <h3 class="section-title">${esc(g.name)}</h3><p class="section-note">${all.length} ${all.length===1?'deadline':'deadlines'}</p></div></div>
+          <div class="group-controls"><button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button><button class="mini-btn" type="button" data-group-action="toggle" data-group-id="${esc(g.id)}" aria-expanded="${!folded}" aria-label="${folded?'Expand':'Collapse'} ${esc(g.name)}">${folded?'Show':'Hide'}</button></div></div>
+          ${folded?'':`<div class="grid" role="list">${visible.length?sectionCards(visible):'<div class="empty-state">No visible deadlines in this group.</div>'}</div>`}
+        </section>`;
+      }).join('') || '<div class="empty-state empty-groups">Create a group to organise your deadlines. You can pick an icon and a colour.</div>';
+      const misc=items.filter(i=>!groupFor(i));
+      const miscVisible=misc.filter(i=>!i.completed || !hideDone.checked);
+      $('#ungroupedCount').textContent=misc.length+' '+(misc.length===1?'deadline':'deadlines');
+      ungroupedGrid.innerHTML=miscVisible.length?sectionCards(miscVisible):'<div class="empty-state">No ungrouped deadlines.</div>';
+    }
 
     // First render, then tick every second
     render(); setInterval(render, 1000);
@@ -381,7 +518,12 @@
     if(!load()) save(items.map(i=>({ name:i.name, start:i.start?.toISOString?.(), due:i.due?.toISOString?.(), completed:false })));
 
     // ===== Modal controls =====
-    const open = (t) => { title.textContent = t; modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fName').focus(), 0); };
+    const refreshGroupSelect = () => {
+      const select=$('#fGroup');const current=select.value;
+      select.innerHTML='<option value="">No group</option>'+groups.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+      select.value=groups.some(g=>g.id===current)?current:'';
+    };
+    const open = (t) => { refreshGroupSelect(); title.textContent = t; modal.classList.add('show'); modal.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fName').focus(), 0); };
     const close = () => { modal.classList.remove('show'); modal.setAttribute('aria-hidden','true'); form.reset(); editing=-1; completeBtn.style.display='none'; deleteBtn.style.display='none'; deleteArmed=false; deleteBtn.textContent='Delete'; };
 
     // ===== UI listeners =====
@@ -401,6 +543,7 @@
       const urlField = $('#fUrl');
       const urlInput = urlField.value.trim();
       const url = validWebUrl(urlInput);
+      const groupId = groups.some(g=>g.id===$('#fGroup').value) ? $('#fGroup').value : '';
       urlField.setCustomValidity(urlInput && !url ? 'Enter a full http:// or https:// link.' : '');
       if (!urlField.reportValidity()) return;
       // FIX: Replaced alert() with console.error()
@@ -415,6 +558,7 @@
           start: start && !isNaN(start) ? start.toISOString() : undefined, 
           due: due.toISOString(),
           ...(url ? {url} : {}),
+          ...(groupId ? {groupId} : {}),
           // Preserve completed status from previous state
           completed: !!prev.completed 
       }; 
@@ -428,7 +572,8 @@
     });
 
     // Grid: edit only
-    grid.addEventListener('click',e=>{
+    // Cards may appear in the overview and their group; delegate edits from both.
+    document.querySelector('main').addEventListener('click',e=>{
       const btn = e.target.closest('button');
       if(!btn) return;
       e.preventDefault(); e.stopPropagation();
@@ -442,6 +587,8 @@
         document.getElementById('fDue').value = ev.due ? toLocal(ev.due) : '';
         document.getElementById('fStart').value = ev.start ? toLocal(ev.start) : '';
         document.getElementById('fUrl').value = ev.url || '';
+        refreshGroupSelect();
+        $('#fGroup').value = groups.some(g=>g.id===ev.groupId) ? ev.groupId : '';
         completeBtn.style.display = ''; deleteBtn.style.display = '';
         deleteArmed=false; deleteBtn.textContent='Delete';
         if(ev.completed){ completeBtn.textContent='Undo Complete'; completeBtn.title='Mark as incomplete (keep due date)'; completeMode='undo'; }
@@ -470,27 +617,57 @@
       items = rebuild(); close(); render(); updateSyncUI();
     });
 
-    // Diagnostics button
-    if(diagBtn){
-      diagBtn.addEventListener('click', async () => {
-        const u = auth.currentUser;
-        const env = { signedIn: !!u, uid: u?.uid || null, projectId: (firebase.app()?.options?.projectId)||null, host: location.host };
-        console.log('[Diagnostics] env:', env);
-        // FIX: Replaced alert() with console.error()
-        if(!u){ console.error('Not signed in. Please sign in first.'); return; }
-        try{
-          // Use .set() without merge to force full validation of the entire document
-          await db.collection('dashboards').doc(u.uid)
-            .set({ items: [{ name: '_diagnostic', due: new Date().toISOString() }] }); // Simplified diagnostic payload
-          // FIX: Replaced alert() with console.log()
-          console.log('Diagnostic write: OK. Check Firestore at dashboards/' + u.uid);
-        }catch(e){
-          console.error('[Diagnostics] write failed:', e.code, e.message, e);
-          // FIX: Replaced alert() with console.error()
-          console.error('Diagnostic write failed: ' + e.code + '\n' + e.message + '\nCheck Firestore rules.');
-        }
-      });
+    // ===== Group editor =====
+    function drawGroupChoices(){
+      $('#groupIcons').innerHTML=Object.keys(GROUP_ICONS).map(k=>`<button type="button" class="icon-choice${selectedIcon===k?' selected':''}" data-icon="${k}" title="${k}" aria-label="${k}" aria-pressed="${selectedIcon===k}">${iconSvg(k)}</button>`).join('');
+      $('#groupColors').innerHTML=GROUP_COLORS.map(c=>`<button type="button" class="color-choice${selectedColor===c?' selected':''}" data-color="${c}" style="--swatch:${c}" title="${c}" aria-label="Choose ${c}" aria-pressed="${selectedColor===c}"></button>`).join('');
+      const name=$('#groupName').value.trim()||'My group';
+      $('#groupBadgePreview').innerHTML=`Badge preview: ${groupBadge({name,icon:selectedIcon,color:selectedColor})}`;
     }
+    function openGroupEditor(id=null){
+      const g=groups.find(x=>x.id===id);
+      editingGroupId=g?.id||null;
+      selectedIcon=safeIcon(g?.icon);selectedColor=safeColor(g?.color);
+      $('#groupName').value=g?.name||'';
+      $('#groupModalTitle').textContent=g?'Edit group':'Create a group';
+      $('#deleteGroup').style.display=g?'':'none';
+      $('#deleteGroup').textContent='Delete group';
+      drawGroupChoices();
+      groupModal.classList.add('show');groupModal.setAttribute('aria-hidden','false');
+      setTimeout(()=>$('#groupName').focus(),0);
+    }
+    function closeGroupEditor(){groupModal.classList.remove('show');groupModal.setAttribute('aria-hidden','true');groupForm.reset();editingGroupId=null;}
+    $('#addGroup').addEventListener('click',()=>openGroupEditor());
+    $('#cancelGroup').addEventListener('click',closeGroupEditor);
+    groupModal.addEventListener('click',e=>{if(e.target===groupModal)closeGroupEditor();});
+    window.addEventListener('keydown',e=>{if(e.key==='Escape'&&groupModal.classList.contains('show'))closeGroupEditor();});
+    $('#groupName').addEventListener('input',drawGroupChoices);
+    $('#groupIcons').addEventListener('click',e=>{const btn=e.target.closest('[data-icon]');if(btn){selectedIcon=safeIcon(btn.dataset.icon);drawGroupChoices();}});
+    $('#groupColors').addEventListener('click',e=>{const btn=e.target.closest('[data-color]');if(btn){selectedColor=safeColor(btn.dataset.color);drawGroupChoices();}});
+    groupForm.addEventListener('submit',e=>{
+      e.preventDefault();const name=$('#groupName').value.trim();
+      if(!name)return;
+      if(editingGroupId){groups=groups.map(g=>g.id===editingGroupId?{...g,name,icon:selectedIcon,color:selectedColor}:g);}
+      else{const id='group_'+(window.crypto?.randomUUID?.()||Date.now().toString(36)+'_'+Math.random().toString(36).slice(2));groups.push({id,name,icon:selectedIcon,color:selectedColor});}
+      groups=sanitizeGroups(groups);saveGroups(groups);
+      cloudSave(load()??[],true);closeGroupEditor();refreshGroupSelect();render();
+    });
+    $('#deleteGroup').addEventListener('click',()=>{
+      if(!editingGroupId)return;
+      const g=groups.find(g=>g.id===editingGroupId);
+      if(!g)return;
+      const count=(load()??[]).filter(it=>it.groupId===g.id).length;
+      if(!confirm(`Delete group "${g.name}"? ${count} associated deadline${count===1?'':'s'} will become ungrouped; none will be deleted.`))return;
+      const stored=(load()??[]).map(it=>it.groupId===g.id?({...it,groupId:undefined}):it);
+      save(stored);groups=groups.filter(x=>x.id!==g.id);saveGroups(groups);collapsedGroups.delete(g.id);
+      cloudSave(stored,true);items=rebuild();closeGroupEditor();refreshGroupSelect();render();
+    });
+    groupSections.addEventListener('click',e=>{
+      const btn=e.target.closest('[data-group-action]');if(!btn)return;
+      const id=btn.dataset.groupId;
+      if(btn.dataset.groupAction==='edit')openGroupEditor(id);
+      else if(btn.dataset.groupAction==='toggle'){collapsedGroups.has(id)?collapsedGroups.delete(id):collapsedGroups.add(id);render();}
+    });
 
     // ===== Lightweight self tests =====
     (function selfTests(){
@@ -528,6 +705,16 @@
         console.assert(sample.length===1 && sample[0].url==='https://example.com/docs', 'link is preserved for cloud sync');
         const noLink = sanitizeItems([{name:'Unlinked task',due:'2026-10-12T13:00:00+04:00',url:''}]);
         console.assert(noLink.length===1 && !('url' in noLink[0]), 'empty URL omitted from cloud payload');
+        // Group compatibility: existing tasks without group IDs remain intact.
+        console.assert(groupAcronym('Research')==='Research', 'single-word group badge');
+        console.assert(groupAcronym('PhD Research')==='PR', 'multi-word group acronym');
+        console.assert(groupAcronym('AI and Remote Sensing')==='AARS', 'longer group acronym');
+        console.assert(sanitizeItems([{name:'A',due:'2026-10-12',groupId:'group_one'}])[0].groupId==='group_one','group ID preserved in cloud payload');
+        console.assert(!('groupId' in sanitizeItems([{name:'A',due:'2026-10-12'}])[0]),'old tasks remain valid');
+        console.assert(sanitizeGroups([{id:'1',name:'PhD Research',icon:'leaf',color:'#93c5fd'}])[0].name==='PhD Research','group payload preserved');
+        console.assert(sanitizeGroups([{id:'1',name:'G',icon:'bad',color:'red'}])[0].icon==='folder', 'invalid group icon rejected');
+        console.assert(sanitizeGroups([{id:'1',name:'G',icon:'leaf',color:'red'}])[0].color===GROUP_COLORS[0], 'invalid group colour rejected');
+        console.assert(sanitizeGroups([{id:'1',name:'First'},{id:'1',name:'Duplicate'}]).length===1, 'duplicate group IDs removed');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
@@ -549,12 +736,17 @@
             const cloud = await cloudLoad(); // Attempt to load cloud data
 
             if (cloud) {
-                // Scenario 1: Cloud data exists. Sync cloud data DOWN, overriding local data.
-                save(cloud);
-                lastSync = Date.now();
+                // Cloud remains the source of truth. Legacy documents without groups keep
+                // any pre-existing local groups, then upgrade their schema non-destructively.
+                if(Array.isArray(cloud.items))save(cloud.items);
+                if(Array.isArray(cloud.groups)){
+                    groups=sanitizeGroups(cloud.groups);saveGroups(groups);
+                } else if(groups.length){
+                    await cloudSave(load()??[], true);
+                }
+                lastSync=Date.now();
             } else {
-                // Scenario 2: Cloud data does NOT exist. Sync local data UP to the cloud.
-                // This typically happens on a user's first sign-in on a device with local data.
+                // New dashboard: upload existing local countdowns and groups together.
                 await cloudSave(localData, true);
             }
 
