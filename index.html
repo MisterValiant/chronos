@@ -104,13 +104,15 @@
     .group-toggle:hover{background:rgba(255,255,255,.045)}
     .group-toggle:focus-visible{outline:2px solid #93c5fd;outline-offset:1px}
     .group-toggle .section-heading{flex:1;min-width:0}
-    .group-details{display:block;min-width:0;flex:1}
-    .group-peek{display:grid;gap:5px;margin-top:9px;max-width:460px}
-    .peek-item{display:flex;align-items:baseline;justify-content:space-between;gap:14px;min-width:0;font-size:11px;font-weight:400;line-height:1.3;color:rgba(232,236,255,.78)}
-    .peek-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-    .peek-name::before{content:'·';color:#7c87ad;margin-right:8px}
-    .peek-due{flex:none;color:#aeb9dd;font-size:10px;font-variant-numeric:tabular-nums}
-    .peek-extra{font-size:10px;color:#8794bd;padding-left:12px;line-height:1.25}
+    /* Closed accordions: flowing, non-ticking task chips beside the group heading. */
+    .group-details{display:flex;align-items:center;gap:19px;min-width:0;flex:1}
+    .group-meta{flex:0 0 150px;min-width:0}
+    .group-peek{display:flex;flex-wrap:wrap;align-items:center;gap:7px 17px;min-width:0;flex:1;margin:0;max-width:none}
+    .peek-item{display:inline-flex;align-items:baseline;gap:4px;min-width:0;max-width:220px;font-size:11px;font-weight:400;line-height:1.45;color:rgba(232,236,255,.82);white-space:nowrap}
+    .peek-item:not(:first-child)::before{content:'·';color:#7c87ad;margin-right:5px;flex:none}
+    .peek-name{display:inline-block;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom;min-width:0}
+    .peek-due{flex:none;color:#aeb9dd;font-size:10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    @media(max-width:720px){.group-details{align-items:flex-start;flex-direction:column;gap:6px}.group-meta{flex:auto}.group-peek{width:100%;gap:5px 12px}.peek-name{max-width:110px}}
     .group-toggle[aria-expanded="true"] .group-peek{display:none}
     .group-toggle .section-title{font-size:14px}
     .group-toggle .section-note{font-size:11px}
@@ -214,7 +216,7 @@
     <section id="ungroupedSection" class="group-section" data-group-id="__ungrouped__" aria-label="Ungrouped deadlines">
       <div class="group-accordion">
         <button id="ungroupedToggle" type="button" class="group-toggle" data-group-action="toggle" data-group-id="__ungrouped__" aria-expanded="false" aria-controls="ungroupedPanel">
-          <span class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><span class="group-details"><span class="section-title" style="display:block">Ungrouped</span><span class="section-note" id="ungroupedCount">0 deadlines</span><span id="ungroupedPeek" class="group-peek" aria-hidden="true"></span></span></span>
+          <span class="section-heading"><span class="group-mark" style="--group-color:#cbd5e1" aria-hidden="true">◦</span><span class="group-details"><span class="group-meta"><span class="section-title" style="display:block">Ungrouped</span><span class="section-note" id="ungroupedCount">0 deadlines</span></span><span id="ungroupedPeek" class="group-peek" aria-hidden="true"></span></span></span>
           <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
         </button>
       </div>
@@ -552,8 +554,9 @@
         return rank(a)-rank(b) || a.due-b.due;
       });
       if(!sorted.length)return '';
-      const rows=sorted.slice(0,2).map(i=>`<span class="peek-item"><span class="peek-name" title="${esc(i.name)}">${esc(i.name)}</span><time class="peek-due" datetime="${esc(i.due.toISOString())}">${esc(compactDue(i.due,now))}</time></span>`).join('');
-      return rows+(sorted.length>2?`<span class="peek-extra">+${sorted.length-2} more</span>`:'');
+      // Preview every visible task; flex-wrap uses the entire space up to Edit.
+      // A short title and its parenthesised date are kept together on the same line.
+      return sorted.map(i=>`<span class="peek-item" title="${esc(i.name)} (${esc(compactDue(i.due,now))})"><span class="peek-name">${esc(i.name)}</span><time class="peek-due" datetime="${esc(i.due.toISOString())}">(${esc(compactDue(i.due,now))})</time></span>`).join('');
     }
     function groupBadge(g){
       return `<span class="group-tag" style="--group-color:${safeColor(g.color)}" title="${esc(g.name)}">${iconSvg(g.icon)}<span>${esc(groupAcronym(g.name))}</span></span>`;
@@ -612,7 +615,7 @@
           <div class="group-accordion">
             <button class="group-toggle" type="button" data-group-action="toggle" data-group-id="${esc(g.id)}" aria-expanded="${expanded}" aria-controls="${esc(panelId)}" aria-label="${expanded?'Collapse':'Expand'} ${esc(g.name)}">
               <span class="section-heading"><span class="group-mark" style="--group-color:${safeColor(g.color)}">${iconSvg(g.icon)}</span><span class="group-details">
-              <span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${count} ${count===1?'deadline':'deadlines'}</span>${!expanded?`<span class="group-peek" aria-hidden="true">${groupPeek(visible,now)}</span>`:''}</span></span>
+              <span class="group-meta"><span class="section-title" style="display:block">${esc(g.name)}</span><span class="section-note">${count} ${count===1?'deadline':'deadlines'}</span></span>${!expanded?`<span class="group-peek" aria-hidden="true">${groupPeek(visible,now)}</span>`:''}</span></span>
               ${groupChevron}
             </button>
             <button class="mini-btn" type="button" data-group-action="edit" data-group-id="${esc(g.id)}" aria-label="Edit ${esc(g.name)}">Edit</button>
@@ -901,6 +904,9 @@
         console.assert(isUngrouped({groupId:''}) && !isUngrouped({groupId:'group_one'}), 'grouped tasks never counted as ungrouped');
         console.assert(groupPeek([{name:'Test task',due:new Date('2026-11-02T12:00:00'),completed:false}],new Date('2026-10-12')).includes('Test task'), 'closed accordion preview includes task');
         console.assert(groupPeek([],new Date())==='', 'empty group preview remains empty');
+        console.assert(groupPeek([{name:'A',due:new Date('2026-11-02T12:00:00'),completed:false}],new Date('2026-10-12')).includes(')</time>'), 'preview date sits in parentheses next to title');
+        console.assert((groupPeek(Array.from({length:8},(_,i)=>({name:'Task '+i,due:new Date('2026-11-02T12:00:00'),completed:false})),new Date('2026-10-12')).match(/class="peek-item"/g)||[]).length===8,'preview includes all eight tasks instead of limiting to two');
+        console.assert(groupPeek([{name:'<img onerror=alert(1)>',due:new Date('2026-11-02T12:00:00'),completed:false}],new Date('2026-10-12')).includes('&lt;img'), 'preview safely escapes task titles');
         console.assert(!!GROUP_ICONS.conference && !!GROUP_ICONS.journal && !!GROUP_ICONS.article, 'academic icons available');
         console.assert(defaultDueTime(new Date('2026-10-12T08:30:00')).endsWith('T23:59'), 'new deadlines default to 11:59 PM local time');
         console.assert(expandedGroupId===null && $('#ungroupedPanel').hidden, 'all group accordions initially collapsed');
