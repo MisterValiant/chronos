@@ -177,19 +177,37 @@
     .todo-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .todo-rail{display:flex;gap:11px;overflow-x:auto;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:2px 1px 13px;scrollbar-width:thin;scrollbar-color:rgba(147,197,253,.36) transparent}
     .todo-rail::-webkit-scrollbar{height:6px}.todo-rail::-webkit-scrollbar-thumb{background:rgba(147,197,253,.32);border-radius:12px}
-    .todo-tile{display:flex;flex-direction:column;gap:10px;flex:0 0 clamp(235px,25vw,295px);min-width:0;min-height:115px;scroll-snap-align:start;padding:13px 14px;border-radius:15px;border:1px solid rgba(255,255,255,.115);background:linear-gradient(150deg,rgba(255,255,255,.065),rgba(255,255,255,.025));transition:border-color .16s,background .16s}
+    .todo-tile{display:flex;flex-direction:column;gap:8px;flex:0 0 clamp(220px,23vw,270px);min-width:0;min-height:96px;scroll-snap-align:start;padding:11px 12px;border-radius:15px;border:1px solid rgba(255,255,255,.115);background:linear-gradient(150deg,rgba(255,255,255,.065),rgba(255,255,255,.025));transition:border-color .16s,background .16s;position:relative;isolation:isolate;overflow:hidden}
+    .todo-tile > :not(.todo-network){position:relative;z-index:1}
+    /* Tiny ambient connected points: decorative only, never an interactive surface. */
+    .todo-network{position:absolute;right:-8px;bottom:-7px;width:174px;height:91px;pointer-events:none;z-index:0;opacity:.27;overflow:visible}
+    .todo-network-path{fill:none;stroke:#91bff9;stroke-width:.8;stroke-linecap:round;stroke-linejoin:round}
+    .todo-network-dot{fill:#9be9ff;filter:drop-shadow(0 0 2px rgba(118,219,255,.48))}
+    .todo-network-inner{transform-origin:center;animation:todoNetDrift 9s ease-in-out infinite alternate}
+    .todo-network-glint{animation:todoNetGlimmer 4.6s ease-in-out infinite alternate}
+    @keyframes todoNetDrift{from{transform:translate(-6px,4px) rotate(-2deg)}to{transform:translate(7px,-4px) rotate(2deg)}}
+    @keyframes todoNetGlimmer{from{opacity:.44}to{opacity:.95}}
+    .todo-tile:hover .todo-network{opacity:.42}
+    @media(prefers-reduced-motion:reduce){.todo-network-inner,.todo-network-glint{animation:none}}
     .todo-tile:hover{border-color:rgba(147,197,253,.3);background:rgba(255,255,255,.075)}
-    .todo-tile.starred{border-color:rgba(185,170,251,.38);background:linear-gradient(150deg,rgba(185,170,251,.10),rgba(255,255,255,.025))}
-    .todo-tile-main{display:flex;gap:10px;align-items:flex-start;min-width:0}
+    .todo-tile.starred{border-color:rgba(255,212,111,.3);background:linear-gradient(150deg,rgba(243,204,105,.065),rgba(255,255,255,.025))}
+    .todo-tile-main{display:flex;gap:8px;align-items:center;min-width:0}
     .todo-check{appearance:none;width:19px;height:19px;flex:0 0 19px;border-radius:6px;border:1px solid rgba(183,200,255,.55);background:rgba(2,9,29,.3);cursor:pointer;margin:1px 0 0;display:grid;place-items:center}
     .todo-check:checked{background:#6ee7b7;border-color:#6ee7b7}.todo-check:checked::after{content:'✓';color:#09223a;font-weight:800;font-size:14px}
     .todo-check:focus-visible,.todo-icon-btn:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
-    .todo-copy{flex:1;min-width:0}.todo-title{font-size:13px;line-height:1.4;font-weight:650;overflow-wrap:anywhere;margin:0}
+    .todo-copy{flex:1;min-width:0}.todo-title{font-size:12.5px;line-height:1.4;font-weight:650;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
     .todo-tile-foot{margin-top:auto;display:flex;align-items:center;gap:7px;min-width:0}
-    .todo-label{font-size:10px;font-weight:600;letter-spacing:.12px;color:#cfbbfa;padding:3px 7px;border-radius:7px;background:rgba(196,181,253,.10);border:1px solid rgba(196,181,253,.23);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+    .todo-label{font-size:10px;font-weight:700;letter-spacing:.18px;color:#cfbbfa;padding:3px 7px;border-radius:7px;background:rgba(196,181,253,.10);border:1px solid rgba(196,181,253,.23);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;flex:none}
     .todo-date{font-size:10px;color:#aeb9dd;white-space:nowrap}
+    .todo-age-dot{display:inline-block;flex:none;width:7px;height:7px;border-radius:50%;box-shadow:0 0 6px currentColor;vertical-align:middle;margin-right:2px}
+    .todo-age-dot.fresh{background:#6ee7b7;color:#6ee7b7}
+    .todo-age-dot.aging{background:#f4ac57;color:#f4ac57}
+    .todo-age-dot.stale{background:#fb7185;color:#fb7185}
     .todo-icon-btn{border:none;background:transparent;color:#a9b6da;cursor:pointer;border-radius:8px;display:inline-flex;justify-content:center;align-items:center;width:27px;height:27px;padding:4px}
-    .todo-icon-btn:hover{color:#f0f4ff;background:rgba(255,255,255,.09)}.todo-icon-btn.star-on{color:#cdbafa}
+    .todo-icon-btn:hover{color:#f0f4ff;background:rgba(255,255,255,.09)}
+    .todo-icon-btn.todo-star-btn{flex:0 0 31px;width:31px;height:31px;padding:0;font-size:27px;line-height:1;color:#c4a865;text-shadow:0 0 6px rgba(255,201,74,.16);transition:color .16s ease,text-shadow .16s ease,transform .16s ease}
+    .todo-icon-btn.todo-star-btn:hover{color:#ffe49a;transform:scale(1.09)}
+    .todo-icon-btn.star-on{color:#ffd86b;text-shadow:0 0 8px rgba(255,211,93,.7),0 0 17px rgba(255,191,66,.32)}
     .todo-empty{color:var(--muted);font-size:12px;padding:17px 3px}
     .todo-manager-sheet{width:min(770px,95vw);max-height:90vh;overflow-y:auto}
     .todo-manager-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
@@ -206,16 +224,16 @@
     .todo-star-label{position:relative;display:inline-flex;align-items:center;align-self:flex-start;width:fit-content;max-width:100%;cursor:pointer;margin:4px 0 0;font-size:13px;user-select:none}
     .todo-star-label input[type="checkbox"]{position:absolute;width:1px;height:1px;padding:0;margin:0;opacity:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;pointer-events:none}
     .todo-star-chip{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:39px;padding:8px 13px;border-radius:11px;border:1px solid rgba(196,181,253,.24);background:rgba(196,181,253,.065);color:#cbd5f5;font-weight:600;line-height:1.35;transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease}
-    .todo-star-symbol{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;line-height:1;font-size:21px;font-weight:500;color:#c6b9e9}
+    .todo-star-symbol{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;line-height:1;font-size:27px;font-weight:500;color:#c9ae70}
     .todo-star-symbol::before{content:'☆'}
     .todo-star-label:hover .todo-star-chip{border-color:rgba(196,181,253,.48);background:rgba(196,181,253,.12)}
-    .todo-star-label input:checked + .todo-star-chip{background:rgba(110,231,183,.105);border-color:rgba(110,231,183,.45);color:#e3fff4}
-    .todo-star-label input:checked + .todo-star-chip .todo-star-symbol{color:#6ee7b7}
+    .todo-star-label input:checked + .todo-star-chip{background:rgba(255,210,102,.10);border-color:rgba(255,210,102,.46);color:#fff2ce}
+    .todo-star-label input:checked + .todo-star-chip .todo-star-symbol{color:#ffd76a;text-shadow:0 0 8px rgba(255,211,93,.7),0 0 17px rgba(255,191,66,.32)}
     .todo-star-label input:checked + .todo-star-chip .todo-star-symbol::before{content:'★'}
     .todo-star-label input:focus-visible + .todo-star-chip{outline:2px solid #93c5fd;outline-offset:3px}
     .todo-star-label:active .todo-star-chip{transform:translateY(1px)}
     @media(prefers-reduced-motion:reduce){.todo-star-chip{transition:none}}
-    @media(max-width:600px){.todo-heading{align-items:flex-start}.todo-heading .section-head{flex-basis:100%}.todo-controls{width:100%;justify-content:flex-start}.todo-tile{flex-basis:82vw;max-width:310px}.todo-manager-entry{gap:7px}.todo-manager-actions{gap:0}.todo-heading .section-note{max-width:320px}}
+    @media(max-width:600px){.todo-heading{align-items:flex-start}.todo-heading .section-head{flex-basis:100%}.todo-controls{width:100%;justify-content:flex-start}.todo-tile{flex-basis:min(80vw,270px);max-width:270px}.todo-manager-entry{gap:7px}.todo-manager-actions{gap:0}.todo-heading .section-note{max-width:320px}}
     @media(prefers-reduced-motion:reduce){.todo-tile{transition:none}.todo-rail{scroll-behavior:auto}}
 
     /* Chronos controls: consistent with the dark glass aesthetic */
@@ -717,6 +735,34 @@
     function priorityTodos(source=todos){return [...source].filter(it=>!it.completed).sort((a,b)=>Number(b.starred)-Number(a.starred) || new Date(a.createdAt)-new Date(b.createdAt) || a.id.localeCompare(b.id));}
     const todoFmt = stamp => new Date(stamp).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
     const todoDateTimeFmt = stamp => new Date(stamp).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    // One-word labels stay legible; multiple words become initialisms (e.g., "Unsupervised Machine Learning" -> "UML").
+    function todoLabelShort(label){
+      const words=String(label||'').trim().split(/\s+/u).filter(Boolean);
+      return words.length<=1?(words[0]||''):words.map(word=>[...word][0].toLocaleUpperCase()).join('');
+    }
+    // Distinguish a newly-created open task from an older, still-pending task.
+    function todoAgeClass(createdAt,now=Date.now()){
+      const elapsed=Math.max(0,now-new Date(createdAt).getTime());
+      return elapsed>=5*864e5?'stale':elapsed>=3*864e5?'aging':'fresh';
+    }
+    function todoAgeDot(createdAt){
+      const age=todoAgeClass(createdAt);
+      const label=age==='fresh'?'Created within 3 days':age==='aging'?'Created 3–5 days ago':'Created 5 or more days ago';
+      return `<span class="todo-age-dot ${age}" data-created-at="${esc(createdAt)}" role="img" aria-label="${label}" title="${label}"></span>`;
+    }
+    const TODO_NETWORK=`<svg class="todo-network" viewBox="0 0 170 90" aria-hidden="true" focusable="false"><g class="todo-network-inner"><path class="todo-network-path" d="M3 70 27 48 46 69 65 42 85 61 112 23 140 39 167 15 M27 48 48 25 65 42 91 14 112 23 M46 69 85 61 113 81 140 39 157 67 M65 42 112 23 113 81 M91 14 140 39"/><g class="todo-network-glint">${[[3,70,2.1],[27,48,2.5],[46,69,2.4],[65,42,2.3],[85,61,2.5],[112,23,3],[140,39,2.7],[167,15,2.2],[48,25,2],[91,14,2.2],[113,81,2.3],[157,67,2.5]].map(([x,y,r])=>`<circle class="todo-network-dot" cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g></g></svg>`;
+    // Update age indicators without rebuilding tiles (so animations stay smooth).
+    function refreshTodoAgeDots(){
+      document.querySelectorAll('.todo-age-dot[data-created-at]').forEach(dot=>{
+        const age=todoAgeClass(dot.dataset.createdAt);
+        if(!dot.classList.contains(age)){
+          dot.classList.remove('fresh','aging','stale');dot.classList.add(age);
+          const label=age==='fresh'?'Created within 3 days':age==='aging'?'Created 3–5 days ago':'Created 5 or more days ago';
+          dot.title=label;dot.setAttribute('aria-label',label);
+        }
+      });
+    }
+
     function oldCompleted(it,now=Date.now()){
       if(!it?.completed)return false;
       const completedAt=isoStamp(it.completedAt);
@@ -1428,13 +1474,14 @@
       const active=priorityTodos();
       $('#todoCount').textContent=active.length+' active';
       const showcase=active.slice(0,10);
-      todoRail.innerHTML=showcase.map(it=>`<article class="todo-tile${it.starred?' starred':''}" role="list" data-todo-id="${esc(it.id)}">
+      todoRail.innerHTML=showcase.map(it=>`<article class="todo-tile${it.starred?' starred':''}" role="listitem" data-todo-id="${esc(it.id)}">
+        ${TODO_NETWORK}
         <div class="todo-tile-main"><input type="checkbox" class="todo-check" data-todo-action="complete" aria-label="Complete ${esc(it.text)}" title="Mark completed"/>
-          <div class="todo-copy"><p class="todo-title">${esc(it.text)}</p></div>
-          <button type="button" class="todo-icon-btn${it.starred?' star-on':''}" data-todo-action="star" aria-label="${it.starred?'Unstar':'Star'} ${esc(it.text)}" title="${it.starred?'Remove priority':'Priority'}">${it.starred?'★':'☆'}</button>
+          <div class="todo-copy"><p class="todo-title" title="${esc(it.text)}">${esc(it.text)}</p></div>
+          <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" aria-pressed="${!!it.starred}" aria-label="${it.starred?'Unstar':'Star'} ${esc(it.text)}" title="${it.starred?'Remove priority':'Star as priority'}">${it.starred?'★':'☆'}</button>
         </div>
-        <div class="todo-tile-foot">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(it.label)}</span>`:''}
-          <span class="todo-date">${esc(todoFmt(it.createdAt))}</span>
+        <div class="todo-tile-foot">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(todoLabelShort(it.label))}</span>`:''}
+          ${todoAgeDot(it.createdAt)}<span class="todo-date">${esc(todoFmt(it.createdAt))}</span>
           <span style="flex:1"></span><button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit to-do" aria-label="Edit ${esc(it.text)}">✎</button>
         </div></article>`).join('') || '<p class="todo-empty">Nothing pending. Add a to-do when you have something to tackle.</p>';
       if(active.length>10)todoRail.insertAdjacentHTML('beforeend',`<button class="todo-tile" type="button" id="todoMore" style="justify-content:center;align-items:center;color:#c6dbff">+${active.length-10} more · View all →</button>`);
@@ -1460,7 +1507,7 @@
     function archiveRecord(it){
       return `<div class="todo-manager-entry"><div class="todo-manager-info"><strong>${esc(it.record.text||it.record.name||'Untitled')}</strong>
         <div class="todo-manager-meta">${it.kind==='deadline'?'Deadline':'To-do'} · Completed ${it.record.completedAt?esc(todoDateTimeFmt(it.record.completedAt)):'date unknown'} · Archived ${esc(todoFmt(it.archivedAt))} on this device</div>
-        ${it.record.label?`<span class="todo-label">${esc(it.record.label)}</span>`:''}</div></div>`;
+        ${it.record.label?`<span class="todo-label" title="${esc(it.record.label)}">${esc(todoLabelShort(it.record.label))}</span>`:''}</div></div>`;
     }
     function renderTodoManager(){
       todoManagerModal.querySelectorAll('[data-todo-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.todoTab===todoTab)));
@@ -1473,10 +1520,10 @@
       target.innerHTML=list.map(it=>`<div class="todo-manager-entry" data-todo-id="${esc(it.id)}">
         <input type="checkbox" class="todo-check" data-todo-action="complete" ${it.completed?'checked':''} aria-label="${it.completed?'Reopen':'Complete'} ${esc(it.text)}"/>
         <div class="todo-manager-info"><strong>${it.starred?'★ ':''}${esc(it.text)}</strong>
-          <div class="todo-manager-meta">${it.label?`<span class="todo-label">${esc(it.label)}</span> · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}</div>
+          <div class="todo-manager-meta">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(todoLabelShort(it.label))}</span> · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}</div>
           ${it.notes?`<div class="todo-manager-meta">${esc(it.notes)}</div>`:''}
         </div><div class="todo-manager-actions">
-          <button type="button" class="todo-icon-btn${it.starred?' star-on':''}" data-todo-action="star" title="${it.starred?'Unstar':'Star'}" aria-label="Change priority">${it.starred?'★':'☆'}</button>
+          <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" title="${it.starred?'Unstar':'Star'}" aria-label="Change priority">${it.starred?'★':'☆'}</button>
           <button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit task" aria-label="Edit">✎</button>
           <button type="button" class="todo-icon-btn" data-todo-action="delete" title="Delete task" aria-label="Delete">×</button>
         </div></div>`).join('')||`<p class="todo-empty">${todoTab==='history'?'No completed tasks yet.':'All caught up!'}</p>`;
@@ -1548,6 +1595,7 @@
       else if(todoManagerModal.classList.contains('show'))closeTodoManager();
     });
     renderTodos();
+    setInterval(refreshTodoAgeDots,60*1000);
     // Run on load and periodically while the page remains open. Inactive visitors
     // do not trigger maintenance; Firebase cannot delete arrays on a schedule here.
     setInterval(()=>{
@@ -1636,6 +1684,16 @@
           {id:'c',text:'Other',createdAt:'2026-02-01T00:00:00Z'}
         ]);
         console.assert(priorityTodos(tdSamples).map(x=>x.id).join(',')==='b,a,c','starred tasks come first, followed by oldest');
+        console.assert(todoLabelShort('PhD')==='PhD','one-word to-do labels retain the full name');
+        console.assert(todoLabelShort('Unsupervised Machine Learning')==='UML','multiple-word labels use initials');
+        console.assert(todoLabelShort('  Research   Methods ')==='RM','abbreviation trims extra whitespace');
+        const ageNow=Date.parse('2026-10-14T18:00:00Z');
+        console.assert(todoAgeClass('2026-10-13T18:00:00Z',ageNow)==='fresh','recent to-do is green');
+        console.assert(todoAgeClass('2026-10-11T18:00:00Z',ageNow)==='aging','three-day-old to-do is orange');
+        console.assert(todoAgeClass('2026-10-09T18:00:00Z',ageNow)==='stale','five-day-old to-do is red');
+        console.assert(todoAgeClass('2026-10-10T18:00:00Z',ageNow)==='aging','four-day-old to-do remains orange');
+        console.assert(TODO_NETWORK.includes('aria-hidden="true"'),'decorative network is inaccessible to screen readers');
+
         console.assert(cleanTodos([{id:'z',text:'<script>',createdAt:'2026-05-01T00:00:00Z'}])[0].text==='<script>','user text remains data, escaped on rendering');
         console.assert(cleanTodos([{id:'bad',text:'Hello',createdAt:'bad timestamp'}]).length===0,'invalid creation date rejected');
         console.assert(oldCompleted({completed:false,completedAt:'2020-01-01T00:00:00Z'},Date.parse('2026-10-14'))===false,'unfinished work never expires');
