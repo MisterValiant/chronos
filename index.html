@@ -96,6 +96,11 @@
     .section-note{font-size:12px;color:var(--muted);margin:3px 0 0}
     .section-count{font-size:11px;color:var(--muted);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 9px}
     .separator{border:none;border-top:1px solid rgba(255,255,255,.10);margin:26px 0}
+    .section-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+    .section-actions .pill{box-shadow:none;background:rgba(255,255,255,.075);border-color:rgba(255,255,255,.15)}
+    .section-actions .pill:hover{background:rgba(255,255,255,.12);border-color:rgba(147,197,253,.3)}
+    .group-hide-toggle{cursor:pointer;white-space:nowrap}
+    @media(max-width:650px){.section-head{align-items:flex-start}.section-actions{width:100%;justify-content:flex-start;gap:8px}.section-actions .pill{padding:9px 12px}}
     .group-section{margin:0 0 10px;scroll-margin-top:150px}
     .group-accordion{display:flex;align-items:center;gap:8px;padding:5px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(140deg,rgba(255,255,255,.075),rgba(255,255,255,.035));border-radius:15px;transition:border-color .18s,background .18s}
     .group-accordion:hover{border-color:rgba(147,197,253,.23);background:rgba(255,255,255,.085)}
@@ -197,7 +202,7 @@
     .todo-check:focus-visible,.todo-icon-btn:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
     .todo-copy{flex:1;min-width:0}.todo-title{font-size:12.5px;line-height:1.4;font-weight:650;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
     .todo-tile-foot{margin-top:auto;display:flex;align-items:center;gap:7px;min-width:0}
-    .todo-label{font-size:10px;font-weight:700;letter-spacing:.18px;color:#cfbbfa;padding:3px 7px;border-radius:7px;background:rgba(196,181,253,.10);border:1px solid rgba(196,181,253,.23);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;flex:none}
+    .todo-label{font-size:10px;font-weight:700;letter-spacing:.18px;color:var(--todo-tag-color,#cfbbfa);padding:3px 7px;border-radius:7px;background:color-mix(in srgb,var(--todo-tag-color,#cfbbfa) 12%,transparent);border:1px solid color-mix(in srgb,var(--todo-tag-color,#cfbbfa) 32%,transparent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:115px;flex:none}
     .todo-date{font-size:10px;color:#aeb9dd;white-space:nowrap}
     .todo-age-dot{display:inline-block;flex:none;width:7px;height:7px;border-radius:50%;box-shadow:0 0 6px currentColor;vertical-align:middle;margin-right:2px}
     .todo-age-dot.fresh{background:#6ee7b7;color:#6ee7b7}
@@ -205,9 +210,11 @@
     .todo-age-dot.stale{background:#fb7185;color:#fb7185}
     .todo-icon-btn{border:none;background:transparent;color:#a9b6da;cursor:pointer;border-radius:8px;display:inline-flex;justify-content:center;align-items:center;width:27px;height:27px;padding:4px}
     .todo-icon-btn:hover{color:#f0f4ff;background:rgba(255,255,255,.09)}
-    .todo-icon-btn.todo-star-btn{flex:0 0 31px;width:31px;height:31px;padding:0;font-size:27px;line-height:1;color:#c4a865;text-shadow:0 0 6px rgba(255,201,74,.16);transition:color .16s ease,text-shadow .16s ease,transform .16s ease}
-    .todo-icon-btn.todo-star-btn:hover{color:#ffe49a;transform:scale(1.09)}
-    .todo-icon-btn.star-on{color:#ffd86b;text-shadow:0 0 8px rgba(255,211,93,.7),0 0 17px rgba(255,191,66,.32)}
+    /* A quiet outline when unstarred; a larger neon-gold star only for priority. */
+    .todo-icon-btn.todo-star-btn{flex:0 0 30px;width:30px;height:30px;padding:0;font-size:18px;line-height:1;color:#aeb8d0;text-shadow:none;transition:color .16s ease,text-shadow .16s ease,transform .16s ease,font-size .16s ease}
+    .todo-icon-btn.todo-star-btn:hover{color:#f3f5ff;transform:scale(1.09)}
+    .todo-icon-btn.todo-star-btn.star-on{font-size:27px;color:#ffe08a;text-shadow:0 0 8px rgba(255,211,93,.75),0 0 18px rgba(255,191,66,.35)}
+    .todo-icon-btn.todo-star-btn.star-on:hover{color:#fff0b5}
     .todo-empty{color:var(--muted);font-size:12px;padding:17px 3px}
     .todo-manager-sheet{width:min(770px,95vw);max-height:90vh;overflow-y:auto}
     .todo-manager-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
@@ -286,6 +293,22 @@
     .confetti-piece{position:absolute;top:-24px;left:var(--left);width:var(--w);height:var(--h);border-radius:2px;background:var(--shade);opacity:.93;animation:chronos-confetti var(--duration) var(--delay) ease-in forwards;will-change:transform,opacity}
     @keyframes chronos-confetti{0%{transform:translate3d(0,-25px,0) rotate(0);opacity:0}5%{opacity:.93}87%{opacity:.93}100%{transform:translate3d(var(--drift),calc(100vh + 70px),0) rotate(var(--spin));opacity:0}}
     @media (prefers-reduced-motion: reduce){.confetti-layer{display:none}}
+
+    /* Calm, accessible polish: hover motion never reflows countdowns or accordions. */
+    @media (hover:hover) and (pointer:fine){
+      body{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2028%2030%22%20width%3D%2228%22%20height%3D%2230%22%3E%3Cpath%20d%3D%22M3%202v22l6.1-6%203.5%209%204-1.8-3.7-8.4H22Z%22%20fill%3D%22%23f4f7ff%22%20stroke%3D%22%2366d9c4%22%20stroke-width%3D%221.7%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") 3 2,auto}
+      button,a,select,label.pill,.group-toggle,.todo-check,.todo-star-label,input[type="checkbox"],.color-choice,.icon-choice{cursor:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2028%2030%22%20width%3D%2228%22%20height%3D%2230%22%3E%3Cpath%20d%3D%22M6%202v20l5-5%203.7%209%204-2-3.7-8H24Z%22%20fill%3D%22%23d5fff5%22%20stroke%3D%22%2368dfc8%22%20stroke-width%3D%222%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") 6 3,pointer}
+      input[type="text"],input[type="url"],input[type="datetime-local"],textarea{cursor:text}
+      .card,.saved-card,.todo-tile,.group-accordion{transition:transform .20s ease,border-color .20s ease,box-shadow .20s ease,background .20s ease}
+      .card:hover,.saved-card:hover,.todo-tile:hover{transform:translateY(-2px);border-color:rgba(147,197,253,.32);box-shadow:0 12px 32px rgba(0,0,0,.23),0 0 0 1px rgba(147,197,253,.065)}
+      .group-accordion:hover{transform:translateY(-1px);box-shadow:0 7px 22px rgba(0,0,0,.12)}
+      .pill:hover,.mini-btn:hover{transform:translateY(-1px)}
+      .todo-icon-btn:hover,.icon:hover{filter:brightness(1.12)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .card,.saved-card,.todo-tile,.group-accordion,.pill,.mini-btn,.todo-icon-btn{transition:none!important;transform:none!important}
+      .card:hover,.saved-card:hover,.todo-tile:hover,.group-accordion:hover,.pill:hover,.mini-btn:hover{transform:none!important}
+    }
   </style>
 </head>
 <body>
@@ -306,10 +329,7 @@
         <span class="muted">Add, edit, complete. Data stays on this device.</span>
       </div>
       <div class="rowline" style="margin-top:10px">
-        <label class="pill" style="cursor:pointer"><input type="checkbox" id="hideDone" checked style="margin-right:8px">Hide completed</label>
         <label class="pill">Sort <select id="sort" class="select"><option value="soon">Soonest</option><option value="name">A→Z</option></select></label>
-        <button id="add" class="pill" style="color:white">+ Add</button>
-        <button id="addGroup" class="pill" type="button">+ Group</button>
         <button id="soundToggle" type="button" class="pill" aria-pressed="true" title="Turn sounds off" aria-label="Sounds on — click to mute"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9a5 5 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></svg><span>Sound on</span></button>
         <button id="signin" class="pill signin-btn" type="button" aria-label="Sign in">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#FFCA28"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -324,7 +344,7 @@
 
   <main>
     <section class="section" aria-labelledby="overviewTitle">
-      <div class="section-head"><div><h2 id="overviewTitle" class="section-title">Up next</h2><p class="section-note">Your four nearest active deadlines</p></div><span id="overviewCount" class="section-count">0 deadlines</span></div>
+      <div class="section-head"><div><h2 id="overviewTitle" class="section-title">Up next</h2><p class="section-note">Your four nearest active deadlines</p></div><div class="section-actions"><span id="overviewCount" class="section-count">0 deadlines</span><button id="add" class="pill" type="button">+ Add</button></div></div>
       <div id="grid" class="grid" role="list"></div>
     </section>
     <hr class="separator"/>
@@ -336,7 +356,7 @@
       <div class="todo-rail" id="todoRail" role="list" aria-label="Priority to-dos, scroll horizontally"></div>
     </section>
     <hr class="separator"/>
-    <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Collapsed by default — expand a group when you need its deadlines</p></div></div>
+    <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Collapsed by default — expand a group when you need its deadlines</p></div><div class="section-actions"><label class="pill group-hide-toggle"><input type="checkbox" id="hideDone" checked>Hide completed</label><button id="addGroup" class="pill" type="button">+ Group</button></div></div>
     <div id="groupSections"></div>
     <section id="ungroupedSection" class="group-section" data-group-id="__ungrouped__" aria-label="Ungrouped deadlines">
       <div class="group-accordion">
@@ -740,6 +760,37 @@
       const words=String(label||'').trim().split(/\s+/u).filter(Boolean);
       return words.length<=1?(words[0]||''):words.map(word=>[...word][0].toLocaleUpperCase()).join('');
     }
+    // Label colours are deterministic (same name = same colour) and collision-resolved
+    // across currently saved labels, without persisting extra Firestore fields.
+    const TODO_TAG_PALETTE = [
+      '#93c5fd','#5eead4','#f9a8d4','#d8b4fe','#f0c674','#78d4ef',
+      '#b9d77b','#f3ad9e','#a5b4fc','#e9a6dc','#90dbbf','#d6c3a5',
+      '#81c9ef','#b6dc9b','#c5b1ed','#e8b1bb','#9ad0cb','#edc99e',
+      '#b2c3ed','#f2b5d6','#9cd2a8','#c3b3fc','#e1bfaa','#aed8ed'
+    ];
+    function normalTag(label){return String(label||'').trim().replace(/\s+/gu,' ').toLocaleLowerCase();}
+    function tagHash(text){let h=2166136261;for(const char of text){h=Math.imul(h^char.codePointAt(0),16777619)>>>0;}return h>>>0;}
+    function buildTodoTagColors(labels){
+      const names=[...new Set(labels.map(normalTag).filter(Boolean))].sort();
+      const mapped=new Map(),used=new Set();
+      for(const name of names){
+        const start=tagHash(name)%TODO_TAG_PALETTE.length;
+        let chosen;
+        for(let offset=0;offset<TODO_TAG_PALETTE.length;offset++){
+          const candidate=TODO_TAG_PALETTE[(start+offset)%TODO_TAG_PALETTE.length];
+          if(!used.has(candidate)){chosen=candidate;break;}
+        }
+        if(!chosen){ // Larger-than-palette label sets retain uniquely generated hues.
+          let hue=tagHash(name)%360;
+          chosen=`hsl(${hue} 72% 77%)`;
+          while(used.has(chosen)){hue=(hue+137.508)%360;chosen=`hsl(${hue.toFixed(3)} 72% 77%)`;}
+        }
+        mapped.set(name,chosen);used.add(chosen);
+      }
+      return mapped;
+    }
+    function todoLabelColor(label){return buildTodoTagColors(todos.map(it=>it.label)).get(normalTag(label))||'#cfbbfa';}
+    function todoTag(label){return `<span class="todo-label" style="--todo-tag-color:${todoLabelColor(label)}" title="${esc(label)}">${esc(todoLabelShort(label))}</span>`;}
     // Distinguish a newly-created open task from an older, still-pending task.
     function todoAgeClass(createdAt,now=Date.now()){
       const elapsed=Math.max(0,now-new Date(createdAt).getTime());
@@ -1480,7 +1531,7 @@
           <div class="todo-copy"><p class="todo-title" title="${esc(it.text)}">${esc(it.text)}</p></div>
           <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" aria-pressed="${!!it.starred}" aria-label="${it.starred?'Unstar':'Star'} ${esc(it.text)}" title="${it.starred?'Remove priority':'Star as priority'}">${it.starred?'★':'☆'}</button>
         </div>
-        <div class="todo-tile-foot">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(todoLabelShort(it.label))}</span>`:''}
+        <div class="todo-tile-foot">${it.label?todoTag(it.label):''}
           ${todoAgeDot(it.createdAt)}<span class="todo-date">${esc(todoFmt(it.createdAt))}</span>
           <span style="flex:1"></span><button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit to-do" aria-label="Edit ${esc(it.text)}">✎</button>
         </div></article>`).join('') || '<p class="todo-empty">Nothing pending. Add a to-do when you have something to tackle.</p>';
@@ -1507,7 +1558,7 @@
     function archiveRecord(it){
       return `<div class="todo-manager-entry"><div class="todo-manager-info"><strong>${esc(it.record.text||it.record.name||'Untitled')}</strong>
         <div class="todo-manager-meta">${it.kind==='deadline'?'Deadline':'To-do'} · Completed ${it.record.completedAt?esc(todoDateTimeFmt(it.record.completedAt)):'date unknown'} · Archived ${esc(todoFmt(it.archivedAt))} on this device</div>
-        ${it.record.label?`<span class="todo-label" title="${esc(it.record.label)}">${esc(todoLabelShort(it.record.label))}</span>`:''}</div></div>`;
+        ${it.record.label?todoTag(it.record.label):''}</div></div>`;
     }
     function renderTodoManager(){
       todoManagerModal.querySelectorAll('[data-todo-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.todoTab===todoTab)));
@@ -1520,7 +1571,7 @@
       target.innerHTML=list.map(it=>`<div class="todo-manager-entry" data-todo-id="${esc(it.id)}">
         <input type="checkbox" class="todo-check" data-todo-action="complete" ${it.completed?'checked':''} aria-label="${it.completed?'Reopen':'Complete'} ${esc(it.text)}"/>
         <div class="todo-manager-info"><strong>${it.starred?'★ ':''}${esc(it.text)}</strong>
-          <div class="todo-manager-meta">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(todoLabelShort(it.label))}</span> · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}</div>
+          <div class="todo-manager-meta">${it.label?`${todoTag(it.label)} · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}</div>
           ${it.notes?`<div class="todo-manager-meta">${esc(it.notes)}</div>`:''}
         </div><div class="todo-manager-actions">
           <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" title="${it.starred?'Unstar':'Star'}" aria-label="Change priority">${it.starred?'★':'☆'}</button>
@@ -1698,6 +1749,12 @@
         console.assert(cleanTodos([{id:'bad',text:'Hello',createdAt:'bad timestamp'}]).length===0,'invalid creation date rejected');
         console.assert(oldCompleted({completed:false,completedAt:'2020-01-01T00:00:00Z'},Date.parse('2026-10-14'))===false,'unfinished work never expires');
         console.assert(oldCompleted({completed:true},Date.parse('2026-10-14'))===false,'legacy completion without timestamp is preserved');
+        // Both countdown deadlines and ordinary to-dos use the same retention gate.
+        console.assert(oldCompleted({name:'Past deadline',due:'2024-01-01T23:59:00Z',completed:false},Date.parse('2026-10-14'))===false,'overdue unfinished deadline is retained');
+        console.assert(oldCompleted({name:'Completed deadline',due:'2024-01-01T23:59:00Z',completed:true,completedAt:'2026-06-01T00:00:00Z'},Date.parse('2026-10-14'))===true,'completed deadline expires after 90 days');
+        const tagSamples=buildTodoTagColors(['PhD','Work','PhD','Conference']);
+        console.assert(tagSamples.size===3 && tagSamples.get('phd')===tagSamples.get(normalTag('PhD')),'identical label names share a colour');
+        console.assert(new Set(tagSamples.values()).size===3,'different labels get distinct accents');
         console.assert(oldCompleted({completed:true,completedAt:'2026-06-01T00:00:00Z'},Date.parse('2026-10-14'))===true,'older completed entries expire');
         console.assert(oldCompleted({completed:true,completedAt:'2026-10-01T00:00:00Z'},Date.parse('2026-10-14'))===false,'recent completions retained');
         // Collections are a separate data model and must never affect deadline data.
