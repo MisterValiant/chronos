@@ -148,6 +148,28 @@
     .empty-groups{margin-top:12px}
     @media(max-width:520px){.wrap{padding:14px}.section-title{font-size:16px}.card .name{font-size:18px}}
 
+    /* Collections: complementary to deadlines, deliberately compact and non-ticking. */
+    .collection-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+    .collection-top .section-head{margin:0;flex:1}
+    .collection-section{scroll-margin-top:150px}
+    .collection-peek{display:flex;align-items:center;gap:7px 15px;flex:1;flex-wrap:wrap;min-width:0}
+    .collection-peek-item{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(232,236,255,.77);font-size:11px}
+    .collection-peek-item:not(:first-child)::before{content:'·';margin-right:10px;color:#7c87ad}
+    .collection-peek-more{font-size:11px;color:#aeb9dd;white-space:nowrap}
+    .saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px}
+    .saved-card{padding:14px 15px;min-width:0;display:flex;flex-direction:column;gap:9px;border-radius:15px;border:1px solid rgba(255,255,255,.10);background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.045));box-shadow:var(--shadow)}
+    .saved-card-title{margin:0;font-size:14px;font-weight:700;line-height:1.45;overflow-wrap:anywhere}
+    .saved-note{font-size:12px;color:var(--muted);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+    .saved-card-actions{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:5px;flex-wrap:wrap}
+    .saved-status{font-size:10px;color:#c4b5fd;background:rgba(196,181,253,.10);border:1px solid rgba(196,181,253,.2);padding:4px 7px;border-radius:7px}
+    .saved-cta{margin-left:auto}
+    .saved-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#a9d9fb;text-decoration:none;border-radius:7px;padding:4px 5px}
+    .saved-link:hover{color:#e8ecff;background:rgba(255,255,255,.07)}
+    .saved-link svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .saved-form-note{min-height:85px;resize:vertical;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit;line-height:1.5;width:100%}
+    .saved-form-note:focus-visible{outline:2px solid #93c5fd;outline-offset:1px}
+    @media(max-width:720px){.collection-peek{width:100%}}
+
     /* Chronos controls: consistent with the dark glass aesthetic */
     :root { color-scheme: dark; }
     button, input, select { font-family: inherit; }
@@ -251,6 +273,14 @@
       </div>
       <div id="ungroupedPanel" class="accordion-panel" role="region" aria-label="Ungrouped countdowns" hidden><div id="ungroupedGrid" class="grid" role="list"></div></div>
     </section>
+    <hr class="separator"/>
+    <section id="collectionsSection" class="section" aria-labelledby="collectionsTitle">
+      <div class="collection-top">
+        <div class="section-head"><div><h2 id="collectionsTitle" class="section-title">Collections</h2><p class="section-note">Your saved ideas, journals and useful links — no deadline needed</p></div></div>
+        <button id="addCollection" class="pill" type="button">+ Collection</button>
+      </div>
+      <div id="collectionSections"></div>
+    </section>
   </main>
 
   <div id="modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
@@ -284,6 +314,41 @@
           <button type="button" id="cancelGroup" class="btn">Cancel</button>
           <button type="button" id="deleteGroup" class="btn danger" style="display:none">Delete group</button>
           <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save group</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="collectionModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="collectionModalTitle">
+    <div class="sheet group-sheet">
+      <h3 id="collectionModalTitle" style="margin:0 0 13px">Create a collection</h3>
+      <form id="collectionForm" class="f">
+        <label>Collection name <input id="collectionName" maxlength="60" required placeholder="e.g., Potential Journals"/></label>
+        <div><span class="choice-label">Icon</span><div id="collectionIcons" class="icon-options" role="group" aria-label="Collection icon"></div></div>
+        <div><span class="choice-label">Colour</span><div id="collectionColors" class="color-options" role="group" aria-label="Collection colour"></div></div>
+        <p class="muted-help" id="collectionBadgePreview"></p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+          <button type="button" id="cancelCollection" class="btn">Cancel</button>
+          <button type="button" id="deleteCollection" class="btn danger" style="display:none">Delete collection</button>
+          <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save collection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="savedModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="savedModalTitle">
+    <div class="sheet group-sheet">
+      <h3 id="savedModalTitle" style="margin:0 0 13px">Save an item</h3>
+      <form id="savedForm" class="f">
+        <label>Title <input id="savedTitle" maxlength="200" required placeholder="e.g., AgriEngineering (MDPI)"/></label>
+        <label>URL (optional) <input id="savedUrl" type="url" maxlength="2048" placeholder="https://example.com" autocomplete="url"/></label>
+        <label>Notes (optional) <textarea id="savedNotes" class="saved-form-note" maxlength="800" placeholder="Why do you want to keep this?" rows="3"></textarea></label>
+        <label>Status <select id="savedStatus" class="form-select"><option value="saved">Saved</option><option value="considering">Considering</option><option value="shortlisted">Shortlisted</option><option value="archived">Archived</option></select></label>
+        <label>Collection <select id="savedCollection" class="form-select" required></select></label>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px">
+          <button type="button" id="cancelSaved" class="btn">Cancel</button>
+          <button type="button" id="deleteSaved" class="btn danger" style="display:none">Delete</button>
+          <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save item</button>
         </div>
       </form>
     </div>
@@ -331,6 +396,8 @@
     const groupSections = $('#groupSections'), ungroupedGrid = $('#ungroupedGrid'), groupModal = $('#groupModal'), groupForm = $('#groupForm');
     const modal = $('#modal'), form = $('#form'), cancel = $('#cancel'), deleteBtn = $('#delete'), completeBtn = $('#complete'), title = $('#mTitle');
     const signInBtn = $('#signin'), signOutBtn = $('#signout'), who = $('#who'), syncEl = $('#sync');
+    const collectionSections = $('#collectionSections'), collectionModal = $('#collectionModal'), collectionForm = $('#collectionForm');
+    const savedModal = $('#savedModal'), savedForm = $('#savedForm');
 
     // Synthesised UI sound effects: no third-party assets, no user data or network calls.
     const SOUND_KEY = 'chronos_sound_enabled_v1';
@@ -385,8 +452,8 @@
     // Basic tap feedback only for navigation/UI controls; save and completion use their own cues.
     document.addEventListener('click',event=>{
       const target=event.target.closest('button, a, input[type="checkbox"]');
-      if(!target || target.closest('#soundToggle') || target.closest('#form') || target.closest('#groupForm'))return;
-      if(target.matches('#ungroupedToggle, .group-toggle, #add, #addGroup') || target.dataset.groupAction==='toggle')playSound('open');
+      if(!target || target.closest('#soundToggle') || target.closest('#form') || target.closest('#groupForm') || target.closest('#collectionForm') || target.closest('#savedForm'))return;
+      if(target.matches('#ungroupedToggle, .group-toggle, .collection-toggle, #add, #addGroup, #addCollection') || target.dataset.groupAction==='toggle')playSound('open');
       else playSound('tap');
     },true);
     document.addEventListener('change',event=>{
@@ -420,6 +487,8 @@
 
     const STORAGE = 'countdown_events_v1';
     const GROUP_STORAGE = 'chronos_groups_v1';
+    const COLLECTION_STORAGE = 'chronos_collections_v1';
+    const SAVED_STORAGE = 'chronos_saved_items_v1';
     let editing = -1, completeMode = 'complete';
     let deleteArmed = false; let syncing = false, lastSync = null, syncError = null;
 
@@ -487,6 +556,42 @@
     // Only one accordion is open at a time; all start closed on each page load.
     const UNGROUPED_KEY = '__ungrouped__';
     let expandedGroupId = null;
+
+    // Collections and saved resources use their own state and storage keys.
+    // Their identifiers never enter deadline-group membership or countdown calculations.
+    const SAVED_STATUSES = ['saved','considering','shortlisted','archived'];
+    const safeStatus = s => SAVED_STATUSES.includes(s) ? s : 'saved';
+    const makeId = prefix => prefix + '_' + (window.crypto?.randomUUID?.() || Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
+    function sanitizeCollections(list){
+      if(!Array.isArray(list)) return [];
+      const seen=new Set();
+      return list.slice(0,80).map(c=>({id:String(c?.id??'').slice(0,100),name:String(c?.name??'').trim().slice(0,60),icon:safeIcon(c?.icon),color:safeColor(c?.color)}))
+        .filter(c=>c.id && c.name && !seen.has(c.id) && seen.add(c.id));
+    }
+    // Caps constrain overall document size under Firestore's 1MiB document limit.
+    function sanitizeSavedItems(list){
+      if(!Array.isArray(list)) return [];
+      const seen=new Set();
+      return list.slice(0,250).map(it=>({
+        id:String(it?.id??'').slice(0,100),collectionId:String(it?.collectionId??'').slice(0,100),
+        title:String(it?.title??'').trim().slice(0,200),
+        ...(validWebUrl(it?.url)?{url:validWebUrl(it.url)}:{}),
+        notes:String(it?.notes??'').trim().slice(0,800),status:safeStatus(it?.status)
+      })).filter(it=>it.id && it.collectionId && it.title && !seen.has(it.id) && seen.add(it.id));
+    }
+    const readArray=(key,clean)=>{try{return clean(JSON.parse(localStorage.getItem(key)||'[]'));}catch(_){return [];}};
+    const storeArray=(key,items)=>{try{localStorage.setItem(key,JSON.stringify(items));}catch(_){}};
+    let collections=readArray(COLLECTION_STORAGE,sanitizeCollections);
+    let savedItems=readArray(SAVED_STORAGE,sanitizeSavedItems);
+    let expandedCollectionId=null; // Independent accordion state; initially all closed.
+    let editingCollectionId=null, collectionIcon='bookmark', collectionColor=GROUP_COLORS[1];
+    let editingSavedId=null;
+    function saveCollectionState(){
+      collections=sanitizeCollections(collections);
+      savedItems=sanitizeSavedItems(savedItems);
+      storeArray(COLLECTION_STORAGE,collections);
+      storeArray(SAVED_STORAGE,savedItems);
+    }
 
     // Formatters
     const P = (s) => s ? new Date(s) : null;
@@ -617,7 +722,10 @@
         console.log('[cloudSave] Attempting save with sanitized data:', safe.length, 'items.'); 
         // Use set to force full document overwrite, which is required by the current security rules validation strategy.
         // Snapshot group and item data together. Serialize writes to prevent stale updates.
-        const payload = { items: safe, groups: sanitizeGroups(groups) };
+        const payload = {
+          items: safe, groups: sanitizeGroups(groups),
+          collections: sanitizeCollections(collections), savedItems: sanitizeSavedItems(savedItems)
+        };
         const userId = u.uid;
         const write = pendingCloudWrite.catch(()=>{}).then(async()=>{
           if(auth.currentUser?.uid !== userId) return;
@@ -999,6 +1107,160 @@
     $('#ungroupedToggle').addEventListener('click',()=>toggleGroup(UNGROUPED_KEY));
 
 
+    // ===== Collections (separate from deadline groups) =====
+    const statusText = {saved:'Saved',considering:'Considering',shortlisted:'Shortlisted',archived:'Archived'};
+    const externalLinkSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6m-9 3 9-9"/><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/></svg>';
+    function savedCard(entry){
+      const url=validWebUrl(entry.url);
+      const note=entry.notes ? `<p class="saved-note" title="${esc(entry.notes)}">${esc(entry.notes)}</p>` : '';
+      return `<article class="saved-card" data-saved-id="${esc(entry.id)}">
+        <h3 class="saved-card-title">${esc(entry.title)}</h3>${note}
+        <div class="saved-card-actions">
+          <span class="saved-status">${statusText[safeStatus(entry.status)]}</span>
+          ${url?`<a class="saved-link" target="_blank" rel="noopener noreferrer" href="${esc(url)}" aria-label="Open link for ${esc(entry.title)}">${externalLinkSvg} Link</a>`:''}
+          <button class="mini-btn saved-cta" data-collection-action="edit-item" data-saved-id="${esc(entry.id)}" type="button" aria-label="Edit ${esc(entry.title)}">Edit</button>
+          <button class="mini-btn" data-collection-action="deadline" data-saved-id="${esc(entry.id)}" type="button" title="Create a deadline from this entry">↗ Deadline</button>
+        </div>
+      </article>`;
+    }
+    function collectionPeek(associated){
+      const previews=associated.slice(0,6).map(x=>`<span class="collection-peek-item" title="${esc(x.title)}">${esc(x.title)}</span>`).join('');
+      const remaining=associated.length-6;
+      return previews+(remaining>0?`<span class="collection-peek-more">+${remaining} more</span>`:'');
+    }
+    function renderCollections(){
+      collectionSections.innerHTML = collections.map(c=>{
+        const associated=savedItems.filter(x=>x.collectionId===c.id);
+        const expanded=expandedCollectionId===c.id;
+        const panelId='collection-panel-'+c.id.replace(/[^a-zA-Z0-9_-]/g,'-');
+        return `<section class="group-section collection-section" data-collection-id="${esc(c.id)}" aria-label="${esc(c.name)}">
+          <div class="group-accordion">
+            <button class="group-toggle collection-toggle" type="button" data-collection-action="toggle" data-collection-id="${esc(c.id)}" aria-expanded="${expanded}" aria-controls="${esc(panelId)}">
+              <span class="section-heading"><span class="group-mark" style="--group-color:${safeColor(c.color)}">${iconSvg(c.icon)}</span><span class="group-details">
+                <span class="group-meta"><span class="section-title" style="display:block">${esc(c.name)}</span><span class="section-note">${associated.length} saved ${associated.length===1?'item':'items'}</span></span>
+                ${!expanded ? `<span class="collection-peek" aria-hidden="true">${collectionPeek(associated)}</span>`:''}
+              </span></span>${groupChevron}
+            </button>
+            <button class="mini-btn group-add-btn" type="button" data-collection-action="add-item" data-collection-id="${esc(c.id)}" aria-label="Add item to ${esc(c.name)}" title="Save item in ${esc(c.name)}">+</button>
+            <button class="mini-btn" type="button" data-collection-action="edit-collection" data-collection-id="${esc(c.id)}" aria-label="Edit ${esc(c.name)}">Edit</button>
+          </div>
+          <div class="accordion-panel" id="${esc(panelId)}" role="region" aria-label="${esc(c.name)} saved items" ${expanded?'':'hidden'}>
+            ${expanded?`<div class="saved-grid">${associated.length?associated.map(savedCard).join(''):'<div class="empty-state">Nothing saved here yet. Click + to add your first item.</div>'}</div>`:''}
+          </div>
+        </section>`;
+      }).join('') || '<div class="empty-state empty-groups">No collections yet. Create one to save journals, research ideas or useful websites.</div>';
+    }
+    function revealCollection(id){
+      expandedCollectionId=id;
+      renderCollections();
+      const section=Array.from(collectionSections.querySelectorAll('[data-collection-id]')).find(el=>el.dataset.collectionId===id);
+      if(section)requestAnimationFrame(()=>section.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'}));
+    }
+    function drawCollectionChoices(){
+      $('#collectionIcons').innerHTML=Object.keys(GROUP_ICONS).map(k=>`<button type="button" class="icon-choice${collectionIcon===k?' selected':''}" data-collection-icon="${k}" aria-label="${k}" aria-pressed="${collectionIcon===k}">${iconSvg(k)}</button>`).join('');
+      const colors=GROUP_COLORS.includes(collectionColor)?GROUP_COLORS:[collectionColor,...GROUP_COLORS];
+      $('#collectionColors').innerHTML=colors.map(c=>`<button type="button" class="color-choice${collectionColor===c?' selected':''}" data-collection-color="${c}" style="--swatch:${c}" aria-label="Choose ${c}" aria-pressed="${collectionColor===c}"></button>`).join('');
+      $('#collectionBadgePreview').innerHTML=`Preview: ${groupBadge({name:$('#collectionName').value||'My collection',icon:collectionIcon,color:collectionColor})}`;
+    }
+    function openCollectionEditor(id=null){
+      const c=collections.find(x=>x.id===id);
+      editingCollectionId=c?.id||null;
+      collectionIcon=c?.icon||'bookmark';collectionColor=c?.color||GROUP_COLORS[1];
+      $('#collectionName').value=c?.name||'';
+      $('#collectionModalTitle').textContent=c?'Edit collection':'Create a collection';
+      $('#deleteCollection').style.display=c?'':'none';
+      drawCollectionChoices();
+      collectionModal.classList.add('show');collectionModal.setAttribute('aria-hidden','false');
+      setTimeout(()=>$('#collectionName').focus(),0);
+    }
+    function closeCollectionEditor(){collectionModal.classList.remove('show');collectionModal.setAttribute('aria-hidden','true');editingCollectionId=null;collectionForm.reset();}
+    $('#addCollection').addEventListener('click',()=>openCollectionEditor());
+    $('#cancelCollection').addEventListener('click',closeCollectionEditor);
+    collectionModal.addEventListener('click',e=>{if(e.target===collectionModal)closeCollectionEditor();});
+    $('#collectionName').addEventListener('input',drawCollectionChoices);
+    $('#collectionIcons').addEventListener('click',e=>{const b=e.target.closest('[data-collection-icon]');if(b){collectionIcon=safeIcon(b.dataset.collectionIcon);drawCollectionChoices();}});
+    $('#collectionColors').addEventListener('click',e=>{const b=e.target.closest('[data-collection-color]');if(b){collectionColor=safeColor(b.dataset.collectionColor);drawCollectionChoices();}});
+    collectionForm.addEventListener('submit',e=>{
+      e.preventDefault();const name=$('#collectionName').value.trim();if(!name)return;
+      const updating=!!editingCollectionId;
+      if(updating)collections=collections.map(c=>c.id===editingCollectionId?{...c,name,icon:collectionIcon,color:collectionColor}:c);
+      else if(collections.length<80)collections.push({id:makeId('collection'),name,icon:collectionIcon,color:collectionColor});
+      else {alert('You have reached the maximum number of collections (80).');return;}
+      saveCollectionState();cloudSave(load()??[],true);closeCollectionEditor();renderCollections();playSound(updating?'update':'create');
+    });
+    $('#deleteCollection').addEventListener('click',()=>{
+      if(!editingCollectionId)return;
+      const c=collections.find(c=>c.id===editingCollectionId);if(!c)return;
+      const count=savedItems.filter(i=>i.collectionId===c.id).length;
+      if(!confirm(`Delete collection "${c.name}" and its ${count} saved item${count===1?'':'s'}? This cannot be undone.`))return;
+      collections=collections.filter(x=>x.id!==c.id);savedItems=savedItems.filter(x=>x.collectionId!==c.id);
+      if(expandedCollectionId===c.id)expandedCollectionId=null;
+      saveCollectionState();cloudSave(load()??[],true);closeCollectionEditor();renderCollections();playSound('delete');
+    });
+    function refreshSavedCollectionSelect(selected=''){
+      $('#savedCollection').innerHTML=collections.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+      $('#savedCollection').value=collections.some(c=>c.id===selected)?selected:(collections[0]?.id||'');
+    }
+    function openSavedEditor(id=null,collectionId=''){
+      const entry=savedItems.find(x=>x.id===id);
+      editingSavedId=entry?.id||null;
+      savedForm.reset();
+      $('#savedTitle').value=entry?.title||'';
+      $('#savedUrl').value=entry?.url||'';
+      $('#savedNotes').value=entry?.notes||'';
+      $('#savedStatus').value=safeStatus(entry?.status);
+      refreshSavedCollectionSelect(entry?.collectionId||collectionId);
+      $('#savedModalTitle').textContent=entry?'Edit saved item':'Save an item';
+      $('#deleteSaved').style.display=entry?'':'none';
+      $('#savedUrl').setCustomValidity('');
+      savedModal.classList.add('show');savedModal.setAttribute('aria-hidden','false');
+      setTimeout(()=>$('#savedTitle').focus(),0);
+    }
+    function closeSavedEditor(){savedModal.classList.remove('show');savedModal.setAttribute('aria-hidden','true');editingSavedId=null;savedForm.reset();}
+    $('#cancelSaved').addEventListener('click',closeSavedEditor);
+    savedModal.addEventListener('click',e=>{if(e.target===savedModal)closeSavedEditor();});
+    $('#savedUrl').addEventListener('input',e=>e.target.setCustomValidity(''));
+    savedForm.addEventListener('submit',e=>{
+      e.preventDefault();
+      const title=$('#savedTitle').value.trim(),rawUrl=$('#savedUrl').value.trim(),url=validWebUrl(rawUrl);
+      const collectionId=$('#savedCollection').value;
+      if(!title || !collections.some(c=>c.id===collectionId))return;
+      if(rawUrl && !url){$('#savedUrl').setCustomValidity('Enter a valid http:// or https:// link.');$('#savedUrl').reportValidity();return;}
+      const value={id:editingSavedId||makeId('saved'),collectionId,title,notes:$('#savedNotes').value.trim(),status:safeStatus($('#savedStatus').value),...(url?{url}:{})};
+      const updating=!!editingSavedId;
+      if(updating)savedItems=savedItems.map(it=>it.id===editingSavedId?value:it);
+      else if(savedItems.length<250)savedItems.push(value);
+      else {alert('You have reached the maximum number of saved items (250).');return;}
+      saveCollectionState();cloudSave(load()??[],true);closeSavedEditor();revealCollection(collectionId);playSound(updating?'update':'create');
+    });
+    $('#deleteSaved').addEventListener('click',()=>{
+      if(!editingSavedId)return;
+      const entry=savedItems.find(x=>x.id===editingSavedId);if(!entry)return;
+      if(!confirm(`Delete "${entry.title}" from Collections?`))return;
+      savedItems=savedItems.filter(x=>x.id!==entry.id);
+      saveCollectionState();cloudSave(load()??[],true);closeSavedEditor();renderCollections();playSound('delete');
+    });
+    collectionSections.addEventListener('click',e=>{
+      const b=e.target.closest('[data-collection-action]');if(!b)return;
+      const action=b.dataset.collectionAction;
+      if(action==='toggle'){
+        expandedCollectionId=expandedCollectionId===b.dataset.collectionId?null:b.dataset.collectionId;
+        renderCollections();
+      }else if(action==='edit-collection')openCollectionEditor(b.dataset.collectionId);
+      else if(action==='add-item')openSavedEditor(null,b.dataset.collectionId);
+      else if(action==='edit-item')openSavedEditor(b.dataset.savedId);
+      else if(action==='deadline'){
+        const entry=savedItems.find(x=>x.id===b.dataset.savedId);if(!entry)return;
+        openNewDeadline();$('#fName').value=entry.title;$('#fUrl').value=entry.url||'';
+      }
+    });
+    window.addEventListener('keydown',e=>{
+      if(e.key!=='Escape')return;
+      if(collectionModal.classList.contains('show'))closeCollectionEditor();
+      if(savedModal.classList.contains('show'))closeSavedEditor();
+    });
+    renderCollections();
+
     // ===== Lightweight self tests =====
     (function selfTests(){
       try{
@@ -1071,6 +1333,15 @@
         console.assert(overviewItems(testNow,'name',sampleOverview).map(i=>i.idx).join(',')==='2,4,3,1', 'overview A-Z sorts the four nearest deadlines');
         console.assert(overviewItems(testNow,'name',sampleOverview).every(i=>i.idx!==5 && i.idx!==6), 'overview does not include later or completed deadlines');
         console.assert(overviewItems(testNow,'soon',[]).length===0, 'overview handles no deadlines');
+        // Collections are a separate data model and must never affect deadline data.
+        console.assert(sanitizeCollections([{id:'c1',name:'Journals',icon:'journal',color:GROUP_COLORS[1]}]).length===1,'collection sanitization');
+        console.assert(sanitizeCollections([{id:'c1',name:'One'},{id:'c1',name:'Duplicate'}]).length===1,'collection IDs unique');
+        console.assert(sanitizeSavedItems([{id:'s1',collectionId:'c1',title:'IJAI',url:'https://example.com/',notes:'No due date'}])[0].title==='IJAI','saved item has no deadline requirement');
+        console.assert(!('url' in sanitizeSavedItems([{id:'s1',collectionId:'c1',title:'Journal',url:'javascript:alert(1)'}])[0]),'unsafe saved item URL omitted');
+        console.assert(sanitizeSavedItems([{id:'s1',collectionId:'c1',title:'One'},{id:'s1',collectionId:'c1',title:'Duplicate'}]).length===1,'saved entry IDs unique');
+        console.assert(savedCard({id:'s1',collectionId:'c1',title:'<img src=x>',notes:'<script>',status:'saved'}).includes('&lt;img'),'saved HTML is escaped');
+        console.assert(collectionPeek([{title:'Paper'},{title:'Journal'}]).includes('Paper'),'collection inline preview');
+        console.assert(collections.length>=0 && expandedCollectionId===null,'collections start collapsed');
         updateSyncUI();
       }catch(e){ console.warn('Self-tests warning:', e); }
     })();
@@ -1095,11 +1366,19 @@
                 // Cloud remains the source of truth. Legacy documents without groups keep
                 // any pre-existing local groups, then upgrade their schema non-destructively.
                 if(Array.isArray(cloud.items))save(cloud.items);
+                let needsUpgrade=false;
                 if(Array.isArray(cloud.groups)){
                     groups=sanitizeGroups(cloud.groups);saveGroups(groups);
-                } else if(groups.length){
-                    await cloudSave(load()??[], true);
-                }
+                } else if(groups.length){needsUpgrade=true;}
+                if(Array.isArray(cloud.collections)){
+                    collections=sanitizeCollections(cloud.collections);
+                    storeArray(COLLECTION_STORAGE,collections);
+                }else if(collections.length){needsUpgrade=true;}
+                if(Array.isArray(cloud.savedItems)){
+                    savedItems=sanitizeSavedItems(cloud.savedItems);
+                    storeArray(SAVED_STORAGE,savedItems);
+                }else if(savedItems.length){needsUpgrade=true;}
+                if(needsUpgrade)await cloudSave(load()??[], true);
                 lastSync=Date.now();
             } else {
                 // New dashboard: upload existing local countdowns and groups together.
@@ -1109,6 +1388,7 @@
             // Rebuild and render the list based on the now-synchronized data
             items = rebuild();
             render();
+            renderCollections();
             updateSyncUI();
 
         } catch (e) {
