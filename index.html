@@ -170,6 +170,42 @@
     .saved-form-note:focus-visible{outline:2px solid #93c5fd;outline-offset:1px}
     @media(max-width:720px){.collection-peek{width:100%}}
 
+    /* To-do focus rail: a compact checklist distinct from countdown cards. */
+    .todo-section{margin:0;min-width:0}
+    .todo-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    .todo-heading .section-head{margin:0;flex:1}
+    .todo-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .todo-rail{display:flex;gap:11px;overflow-x:auto;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:2px 1px 13px;scrollbar-width:thin;scrollbar-color:rgba(147,197,253,.36) transparent}
+    .todo-rail::-webkit-scrollbar{height:6px}.todo-rail::-webkit-scrollbar-thumb{background:rgba(147,197,253,.32);border-radius:12px}
+    .todo-tile{display:flex;flex-direction:column;gap:10px;flex:0 0 clamp(235px,25vw,295px);min-width:0;min-height:115px;scroll-snap-align:start;padding:13px 14px;border-radius:15px;border:1px solid rgba(255,255,255,.115);background:linear-gradient(150deg,rgba(255,255,255,.065),rgba(255,255,255,.025));transition:border-color .16s,background .16s}
+    .todo-tile:hover{border-color:rgba(147,197,253,.3);background:rgba(255,255,255,.075)}
+    .todo-tile.starred{border-color:rgba(185,170,251,.38);background:linear-gradient(150deg,rgba(185,170,251,.10),rgba(255,255,255,.025))}
+    .todo-tile-main{display:flex;gap:10px;align-items:flex-start;min-width:0}
+    .todo-check{appearance:none;width:19px;height:19px;flex:0 0 19px;border-radius:6px;border:1px solid rgba(183,200,255,.55);background:rgba(2,9,29,.3);cursor:pointer;margin:1px 0 0;display:grid;place-items:center}
+    .todo-check:checked{background:#6ee7b7;border-color:#6ee7b7}.todo-check:checked::after{content:'✓';color:#09223a;font-weight:800;font-size:14px}
+    .todo-check:focus-visible,.todo-icon-btn:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+    .todo-copy{flex:1;min-width:0}.todo-title{font-size:13px;line-height:1.4;font-weight:650;overflow-wrap:anywhere;margin:0}
+    .todo-tile-foot{margin-top:auto;display:flex;align-items:center;gap:7px;min-width:0}
+    .todo-label{font-size:10px;font-weight:600;letter-spacing:.12px;color:#cfbbfa;padding:3px 7px;border-radius:7px;background:rgba(196,181,253,.10);border:1px solid rgba(196,181,253,.23);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+    .todo-date{font-size:10px;color:#aeb9dd;white-space:nowrap}
+    .todo-icon-btn{border:none;background:transparent;color:#a9b6da;cursor:pointer;border-radius:8px;display:inline-flex;justify-content:center;align-items:center;width:27px;height:27px;padding:4px}
+    .todo-icon-btn:hover{color:#f0f4ff;background:rgba(255,255,255,.09)}.todo-icon-btn.star-on{color:#cdbafa}
+    .todo-empty{color:var(--muted);font-size:12px;padding:17px 3px}
+    .todo-manager-sheet{width:min(770px,95vw);max-height:90vh;overflow-y:auto}
+    .todo-manager-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+    .todo-tab{color:#c5cfed;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:12px}
+    .todo-tab[aria-selected="true"]{color:#091d32;background:#b3ebdf;border-color:#b3ebdf;font-weight:700}
+    .todo-manager-list{display:grid;gap:8px;max-height:min(55vh,480px);overflow-y:auto;padding-right:3px}
+    .todo-manager-entry{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10)}
+    .todo-manager-info{flex:1;min-width:0}.todo-manager-info strong{display:block;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+    .todo-manager-meta{font-size:11px;line-height:1.55;color:var(--muted);margin-top:4px}
+    .todo-manager-actions{display:flex;gap:3px;align-items:center;flex:none}
+    .todo-manager-note{font-size:11px;color:#9daacb;margin:9px 0 0;line-height:1.55}
+    .todo-form-note{min-height:76px;resize:vertical;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:10px;color:var(--txt);font:inherit;width:100%}
+    .todo-star-label{display:flex;align-items:center;gap:9px;color:#d3c6fc;cursor:pointer;font-size:13px}.todo-star-label input{accent-color:#b6a3f6}
+    @media(max-width:600px){.todo-heading{align-items:flex-start}.todo-heading .section-head{flex-basis:100%}.todo-controls{width:100%;justify-content:flex-start}.todo-tile{flex-basis:82vw;max-width:310px}.todo-manager-entry{gap:7px}.todo-manager-actions{gap:0}.todo-heading .section-note{max-width:320px}}
+    @media(prefers-reduced-motion:reduce){.todo-tile{transition:none}.todo-rail{scroll-behavior:auto}}
+
     /* Chronos controls: consistent with the dark glass aesthetic */
     :root { color-scheme: dark; }
     button, input, select { font-family: inherit; }
@@ -262,6 +298,14 @@
       <div id="grid" class="grid" role="list"></div>
     </section>
     <hr class="separator"/>
+    <section class="section todo-section" aria-labelledby="todoTitle">
+      <div class="todo-heading">
+        <div class="section-head"><div><h2 class="section-title" id="todoTitle">To-do list</h2><p class="section-note">A small checklist for today's work · starred first, then oldest created</p></div><span class="section-count" id="todoCount">0 active</span></div>
+        <div class="todo-controls"><button class="pill" id="todoAdd" type="button">+ To-do</button><button class="pill" id="todoViewAll" type="button">View all &amp; history</button></div>
+      </div>
+      <div class="todo-rail" id="todoRail" role="list" aria-label="Priority to-dos, scroll horizontally"></div>
+    </section>
+    <hr class="separator"/>
     <div class="section-head"><div><h2 class="section-title">Your groups</h2><p class="section-note">Collapsed by default — expand a group when you need its deadlines</p></div></div>
     <div id="groupSections"></div>
     <section id="ungroupedSection" class="group-section" data-group-id="__ungrouped__" aria-label="Ungrouped deadlines">
@@ -299,6 +343,39 @@
           <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="todoEditModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="todoEditHeading">
+    <div class="sheet">
+      <h3 id="todoEditHeading" style="margin:0 0 12px">Add a to-do</h3>
+      <form id="todoForm" class="f">
+        <label>Task <input id="todoText" required maxlength="200" placeholder="e.g., Prepare unsupervised learning slides"/></label>
+        <label>Label (optional — type your own) <input id="todoLabel" maxlength="45" placeholder="e.g., PhD, Work, ISAD" list="todoLabels"/></label><datalist id="todoLabels"></datalist>
+        <label>Notes (optional) <textarea id="todoNotes" class="todo-form-note" maxlength="600" rows="2" placeholder="Small reminders or next steps"></textarea></label>
+        <label class="todo-star-label"><input id="todoStar" type="checkbox"/> <span>★ Star as a priority</span></label>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:7px">
+          <button type="button" class="btn" id="todoCancel">Cancel</button>
+          <button type="button" class="btn danger" id="todoDelete" style="display:none">Delete</button>
+          <button type="submit" class="btn" style="background:linear-gradient(90deg,#6ee7b7,#93c5fd);color:#081022;border:none">Save to-do</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="todoManagerModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="todoManagerHeading">
+    <div class="sheet todo-manager-sheet">
+      <div class="rowline" style="justify-content:space-between"><h3 id="todoManagerHeading" style="margin:0">Your to-dos</h3><button type="button" id="todoManagerClose" class="btn" aria-label="Close to-do manager">Close</button></div>
+      <div class="todo-manager-tabs" role="tablist" aria-label="To-do views">
+        <button type="button" class="todo-tab" data-todo-tab="active" aria-selected="true" role="tab">Active</button>
+        <button type="button" class="todo-tab" data-todo-tab="history" aria-selected="false" role="tab">Completed</button>
+        <button type="button" class="todo-tab" data-todo-tab="archive" aria-selected="false" role="tab">On-device archive</button>
+      </div>
+      <div id="todoManagerList" class="todo-manager-list" aria-live="polite"></div>
+      <p class="todo-manager-note">Completed items are retained in the cloud for 90 days, then moved to a local archive on this device when Chronos next opens or checks. Archive entries are not synced. Old completed deadlines follow the same rule; unfinished deadlines are never auto-deleted.</p>
+      <div class="rowline" style="justify-content:space-between;margin-top:14px">
+        <button class="btn" id="todoExport" type="button">Export all to-dos &amp; archive</button>
+        <button class="btn" id="todoManagerAdd" type="button">+ New to-do</button>
+      </div>
     </div>
   </div>
 
@@ -489,6 +566,9 @@
     const GROUP_STORAGE = 'chronos_groups_v1';
     const COLLECTION_STORAGE = 'chronos_collections_v1';
     const SAVED_STORAGE = 'chronos_saved_items_v1';
+    const TODO_STORAGE = 'chronos_todos_v1';
+    const TODO_ARCHIVE_STORAGE = 'chronos_completed_archive_v1';
+    const RETENTION_DAYS = 90;
     let editing = -1, completeMode = 'complete';
     let deleteArmed = false; let syncing = false, lastSync = null, syncError = null;
 
@@ -593,6 +673,69 @@
       storeArray(SAVED_STORAGE,savedItems);
     }
 
+    // To-dos are entirely independent of deadline groups and collection folders.
+    // Keep stable IDs and timestamps so tasks can be reordered and audited safely.
+    const isoStamp = value => {
+      if(typeof value !== 'string' || !value)return null;
+      const d=new Date(value);
+      return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+    };
+    function cleanTodos(list){
+      if(!Array.isArray(list))return [];
+      const seen=new Set();
+      return list.slice(0,400).map(it=>{
+        const id=String(it?.id??'').slice(0,110);
+        const text=String(it?.text??'').trim().slice(0,200);
+        const createdAt=isoStamp(it?.createdAt);
+        if(!id||!text||!createdAt||seen.has(id))return null;
+        seen.add(id);
+        const completed=!!it?.completed;
+        return {id,text, label:String(it?.label??'').trim().slice(0,45),notes:String(it?.notes??'').trim().slice(0,600),
+          starred:!!it?.starred,createdAt,completed,
+          ...(completed && isoStamp(it?.completedAt)?{completedAt:isoStamp(it.completedAt)}:{})};
+      }).filter(Boolean);
+    }
+    function cleanArchive(list){
+      if(!Array.isArray(list))return [];
+      return list.slice(-1600).map(it=>({kind:it?.kind==='deadline'?'deadline':'todo',archivedAt:isoStamp(it?.archivedAt)||new Date().toISOString(),record:it?.record})).filter(it=>it.record&&typeof it.record==='object');
+    }
+    let todos=readArray(TODO_STORAGE,cleanTodos);
+    let localArchive=readArray(TODO_ARCHIVE_STORAGE,cleanArchive);
+    function saveTodos(){todos=cleanTodos(todos);storeArray(TODO_STORAGE,todos);}
+    function priorityTodos(source=todos){return [...source].filter(it=>!it.completed).sort((a,b)=>Number(b.starred)-Number(a.starred) || new Date(a.createdAt)-new Date(b.createdAt) || a.id.localeCompare(b.id));}
+    const todoFmt = stamp => new Date(stamp).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+    const todoDateTimeFmt = stamp => new Date(stamp).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    function oldCompleted(it,now=Date.now()){
+      if(!it?.completed)return false;
+      const completedAt=isoStamp(it.completedAt);
+      return !!completedAt && new Date(completedAt).getTime() <= now - RETENTION_DAYS*864e5;
+    }
+    // Firestore uses one document with arrays. Cleanup removes expired array members.
+    // Before removal, back up entries to device-local archive, never remove unknown-age completions.
+    function cleanupCompleted(now=Date.now()){
+      const expiredTodos=todos.filter(it=>oldCompleted(it,now));
+      const current=Array.isArray(load())?load():[];
+      const expiredDeadlines=current.filter(it=>oldCompleted(it,now));
+      if(!expiredTodos.length&&!expiredDeadlines.length)return false;
+      const archiveAdd=[...expiredTodos.map(record=>({kind:'todo',record,archivedAt:new Date(now).toISOString()})),
+        ...expiredDeadlines.map(record=>({kind:'deadline',record,archivedAt:new Date(now).toISOString()}))];
+      // A task may have been archived locally before the cloud state reloaded;
+      // deduplicate it so signing in does not create a second archive copy.
+      const keyFor=x=>x.kind==='todo' ? 'todo:'+String(x.record.id) :
+        'deadline:'+String(x.record.name)+'|'+String(x.record.due)+'|'+String(x.record.completedAt);
+      const byKey=new Map(localArchive.map(x=>[keyFor(x),x]));
+      archiveAdd.forEach(x=>{if(!byKey.has(keyFor(x)))byKey.set(keyFor(x),x);});
+      const proposed=cleanArchive([...byKey.values()]);
+      try{localStorage.setItem(TODO_ARCHIVE_STORAGE,JSON.stringify(proposed));}catch(e){console.warn('Cleanup skipped: cannot save local archive',e);return false;}
+      localArchive=proposed;
+      todos=todos.filter(it=>!oldCompleted(it,now));
+      saveTodos();
+      if(expiredDeadlines.length)save(current.filter(it=>!oldCompleted(it,now)));
+      return true;
+    }
+    // The visitor's browser initiates this cleanup, not a Firebase background scheduler.
+    const startupCleanup=cleanupCompleted();
+
     // Formatters
     const P = (s) => s ? new Date(s) : null;
     const fmt = (d) => d.toLocaleString([], {year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'});
@@ -691,6 +834,7 @@
           // If false, we exclude it to satisfy the security rule's optional check.
           if (completed === true) {
             item.completed = true;
+            if(isoStamp(it?.completedAt))item.completedAt=isoStamp(it.completedAt);
           }
           // Optional link, included only when it is safe and non-empty.
           if (url) item.url = url;
@@ -712,7 +856,8 @@
         due:i.due?.toISOString?.(), 
         completed:!!i.completed,
         url:i.url,
-        groupId:i.groupId
+        groupId:i.groupId,
+        completedAt:i.completedAt
       }));
       
       const safe = sanitizeItems(dataForSanitize);
@@ -724,7 +869,8 @@
         // Snapshot group and item data together. Serialize writes to prevent stale updates.
         const payload = {
           items: safe, groups: sanitizeGroups(groups),
-          collections: sanitizeCollections(collections), savedItems: sanitizeSavedItems(savedItems)
+          collections: sanitizeCollections(collections), savedItems: sanitizeSavedItems(savedItems),
+          todos: cleanTodos(todos)
         };
         const userId = u.uid;
         const write = pendingCloudWrite.catch(()=>{}).then(async()=>{
@@ -980,7 +1126,8 @@
           ...(url ? {url} : {}),
           ...(groupId ? {groupId} : {}),
           // Preserve completed status from previous state
-          completed: !!prev.completed 
+          completed: !!prev.completed,
+          ...(prev.completed && isoStamp(prev.completedAt)?{completedAt:isoStamp(prev.completedAt)}:{})
       }; 
 
       const wasEditing = editing >= 0;
@@ -1025,7 +1172,8 @@
       // Use raw data (ISO strings) from storage for cloudSave
       const wasCompleted = !!stored[editing].completed;
       const nowCompleted = (completeMode==='complete');
-      stored[editing] = { ...stored[editing], completed: nowCompleted };
+      stored[editing] = { ...stored[editing], completed: nowCompleted,
+        ...(nowCompleted?{completedAt: new Date().toISOString()}:{completedAt:undefined}) };
       save(stored); cloudSave(stored, true).catch(()=>{})
       items = rebuild(); close(); render(); updateSyncUI();
       if(nowCompleted && !wasCompleted){playSound('complete');celebrateCompletion();}
@@ -1261,6 +1409,142 @@
     });
     renderCollections();
 
+    // ===== Checklist interface =====
+    const todoRail=$('#todoRail'), todoManagerModal=$('#todoManagerModal'), todoEditModal=$('#todoEditModal');
+    let editingTodoId=null, todoTab='active';
+    function renderTodos(){
+      const active=priorityTodos();
+      $('#todoCount').textContent=active.length+' active';
+      const showcase=active.slice(0,10);
+      todoRail.innerHTML=showcase.map(it=>`<article class="todo-tile${it.starred?' starred':''}" role="list" data-todo-id="${esc(it.id)}">
+        <div class="todo-tile-main"><input type="checkbox" class="todo-check" data-todo-action="complete" aria-label="Complete ${esc(it.text)}" title="Mark completed"/>
+          <div class="todo-copy"><p class="todo-title">${esc(it.text)}</p></div>
+          <button type="button" class="todo-icon-btn${it.starred?' star-on':''}" data-todo-action="star" aria-label="${it.starred?'Unstar':'Star'} ${esc(it.text)}" title="${it.starred?'Remove priority':'Priority'}">${it.starred?'★':'☆'}</button>
+        </div>
+        <div class="todo-tile-foot">${it.label?`<span class="todo-label" title="${esc(it.label)}">${esc(it.label)}</span>`:''}
+          <span class="todo-date">${esc(todoFmt(it.createdAt))}</span>
+          <span style="flex:1"></span><button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit to-do" aria-label="Edit ${esc(it.text)}">✎</button>
+        </div></article>`).join('') || '<p class="todo-empty">Nothing pending. Add a to-do when you have something to tackle.</p>';
+      if(active.length>10)todoRail.insertAdjacentHTML('beforeend',`<button class="todo-tile" type="button" id="todoMore" style="justify-content:center;align-items:center;color:#c6dbff">+${active.length-10} more · View all →</button>`);
+      if(todoManagerModal.classList.contains('show'))renderTodoManager();
+    }
+    function closeTodoEdit(){todoEditModal.classList.remove('show');todoEditModal.setAttribute('aria-hidden','true');editingTodoId=null;$('#todoForm').reset();}
+    function openTodoEdit(id=null){
+      const it=todos.find(x=>x.id===id);
+      editingTodoId=it?.id||null;
+      $('#todoForm').reset();
+      $('#todoText').value=it?.text||'';$('#todoLabel').value=it?.label||'';$('#todoNotes').value=it?.notes||'';$('#todoStar').checked=!!it?.starred;
+      $('#todoDelete').style.display=it?'':'none';
+      $('#todoEditHeading').textContent=it?'Edit to-do':'Add a to-do';
+      const labels=[...new Set(todos.map(x=>x.label).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+      $('#todoLabels').innerHTML=labels.map(label=>`<option value="${esc(label)}"></option>`).join('');
+      todoEditModal.classList.add('show');todoEditModal.setAttribute('aria-hidden','false');
+      setTimeout(()=>$('#todoText').focus(),0);
+    }
+    function openTodoManager(tab='active'){
+      todoTab=tab;todoManagerModal.classList.add('show');todoManagerModal.setAttribute('aria-hidden','false');renderTodoManager();
+    }
+    function closeTodoManager(){todoManagerModal.classList.remove('show');todoManagerModal.setAttribute('aria-hidden','true');}
+    function archiveRecord(it){
+      return `<div class="todo-manager-entry"><div class="todo-manager-info"><strong>${esc(it.record.text||it.record.name||'Untitled')}</strong>
+        <div class="todo-manager-meta">${it.kind==='deadline'?'Deadline':'To-do'} · Completed ${it.record.completedAt?esc(todoDateTimeFmt(it.record.completedAt)):'date unknown'} · Archived ${esc(todoFmt(it.archivedAt))} on this device</div>
+        ${it.record.label?`<span class="todo-label">${esc(it.record.label)}</span>`:''}</div></div>`;
+    }
+    function renderTodoManager(){
+      todoManagerModal.querySelectorAll('[data-todo-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.todoTab===todoTab)));
+      const target=$('#todoManagerList');
+      if(todoTab==='archive'){
+        target.innerHTML=localArchive.length?[...localArchive].reverse().map(archiveRecord).join(''):'<p class="todo-empty">No older completed entries archived on this device yet.</p>';
+        return;
+      }
+      const list=todoTab==='active'?priorityTodos():[...todos].filter(it=>it.completed).sort((a,b)=>new Date(b.completedAt||0)-new Date(a.completedAt||0));
+      target.innerHTML=list.map(it=>`<div class="todo-manager-entry" data-todo-id="${esc(it.id)}">
+        <input type="checkbox" class="todo-check" data-todo-action="complete" ${it.completed?'checked':''} aria-label="${it.completed?'Reopen':'Complete'} ${esc(it.text)}"/>
+        <div class="todo-manager-info"><strong>${it.starred?'★ ':''}${esc(it.text)}</strong>
+          <div class="todo-manager-meta">${it.label?`<span class="todo-label">${esc(it.label)}</span> · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}</div>
+          ${it.notes?`<div class="todo-manager-meta">${esc(it.notes)}</div>`:''}
+        </div><div class="todo-manager-actions">
+          <button type="button" class="todo-icon-btn${it.starred?' star-on':''}" data-todo-action="star" title="${it.starred?'Unstar':'Star'}" aria-label="Change priority">${it.starred?'★':'☆'}</button>
+          <button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit task" aria-label="Edit">✎</button>
+          <button type="button" class="todo-icon-btn" data-todo-action="delete" title="Delete task" aria-label="Delete">×</button>
+        </div></div>`).join('')||`<p class="todo-empty">${todoTab==='history'?'No completed tasks yet.':'All caught up!'}</p>`;
+    }
+    function persistTodoChanges(sound='update',completedNow=false){
+      saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});
+      if(completedNow){playSound('complete');celebrateCompletion();} else playSound(sound);
+    }
+    function todoAction(action,id){
+      const it=todos.find(x=>x.id===id);if(!it)return;
+      if(action==='edit'){openTodoEdit(id);return;}
+      if(action==='delete'){
+        if(!confirm(`Delete to-do "${it.text}"?`))return;
+        todos=todos.filter(x=>x.id!==id);persistTodoChanges('delete');return;
+      }
+      if(action==='star'){
+        it.starred=!it.starred;persistTodoChanges();return;
+      }
+      if(action==='complete'){
+        const completing=!it.completed;
+        it.completed=completing;
+        if(completing)it.completedAt=new Date().toISOString();
+        else delete it.completedAt;
+        persistTodoChanges('update',completing);
+      }
+    }
+    todoRail.addEventListener('click',e=>{
+      if(e.target.closest('#todoMore')){openTodoManager();return;}
+      const b=e.target.closest('[data-todo-action]');const article=b?.closest('[data-todo-id]');
+      if(b&&article&&b.dataset.todoAction!=='complete')todoAction(b.dataset.todoAction,article.dataset.todoId);
+    });
+    todoRail.addEventListener('change',e=>{
+      const el=e.target.closest('.todo-check[data-todo-action]');if(el)todoAction('complete',el.closest('[data-todo-id]').dataset.todoId);
+    });
+    $('#todoAdd').addEventListener('click',()=>openTodoEdit());
+    $('#todoViewAll').addEventListener('click',()=>openTodoManager());
+    $('#todoManagerAdd').addEventListener('click',()=>openTodoEdit());
+    $('#todoCancel').addEventListener('click',closeTodoEdit);
+    todoEditModal.addEventListener('click',e=>{if(e.target===todoEditModal)closeTodoEdit();});
+    $('#todoManagerClose').addEventListener('click',closeTodoManager);
+    todoManagerModal.addEventListener('click',e=>{if(e.target===todoManagerModal)closeTodoManager();});
+    $('#todoForm').addEventListener('submit',e=>{
+      e.preventDefault();const text=$('#todoText').value.trim();if(!text)return;
+      const previous=todos.find(x=>x.id===editingTodoId);
+      const value={id:previous?.id||makeId('todo'),text,label:$('#todoLabel').value.trim(),notes:$('#todoNotes').value.trim(),starred:$('#todoStar').checked,
+        createdAt:previous?.createdAt||new Date().toISOString(),completed:previous?.completed||false,
+        ...(previous?.completedAt?{completedAt:previous.completedAt}:{})};
+      if(previous)todos=todos.map(it=>it.id===previous.id?value:it);
+      else if(todos.length<400)todos.push(value);
+      else {alert('Maximum 400 to-dos including completed tasks. Export or clean older entries.');return;}
+      closeTodoEdit();persistTodoChanges(previous?'update':'create');
+    });
+    $('#todoDelete').addEventListener('click',()=>{if(editingTodoId){const id=editingTodoId;closeTodoEdit();todoAction('delete',id);}});
+    todoManagerModal.querySelectorAll('[data-todo-tab]').forEach(btn=>btn.addEventListener('click',()=>{todoTab=btn.dataset.todoTab;renderTodoManager();}));
+    $('#todoManagerList').addEventListener('click',e=>{
+      const b=e.target.closest('button[data-todo-action]');if(b){const row=b.closest('[data-todo-id]');if(row)todoAction(b.dataset.todoAction,row.dataset.todoId);}
+    });
+    $('#todoManagerList').addEventListener('change',e=>{
+      const ch=e.target.closest('.todo-check[data-todo-action]');if(ch){const row=ch.closest('[data-todo-id]');if(row)todoAction('complete',row.dataset.todoId);}
+    });
+    $('#todoExport').addEventListener('click',()=>{
+      const data={exportedAt:new Date().toISOString(),todos:cleanTodos(todos),localArchive:cleanArchive(localArchive),notes:'Older archive entries are device-local and not synced'};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download='chronos-todos-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);playSound('click');
+    });
+    window.addEventListener('keydown',e=>{
+      if(e.key!=='Escape')return;
+      if(todoEditModal.classList.contains('show'))closeTodoEdit();
+      else if(todoManagerModal.classList.contains('show'))closeTodoManager();
+    });
+    renderTodos();
+    // Run on load and periodically while the page remains open. Inactive visitors
+    // do not trigger maintenance; Firebase cannot delete arrays on a schedule here.
+    setInterval(()=>{
+      if(cleanupCompleted()){
+        items=rebuild();render();renderTodos();
+        cloudSave(load()??[],true).catch(()=>{});
+      }
+    },6*3600*1000);
+
     // ===== Lightweight self tests =====
     (function selfTests(){
       try{
@@ -1333,6 +1617,19 @@
         console.assert(overviewItems(testNow,'name',sampleOverview).map(i=>i.idx).join(',')==='2,4,3,1', 'overview A-Z sorts the four nearest deadlines');
         console.assert(overviewItems(testNow,'name',sampleOverview).every(i=>i.idx!==5 && i.idx!==6), 'overview does not include later or completed deadlines');
         console.assert(overviewItems(testNow,'soon',[]).length===0, 'overview handles no deadlines');
+        // To-dos: priorities, timestamps, labels and 90-day cleanup boundaries.
+        const tdSamples=cleanTodos([
+          {id:'a',text:'Old task',createdAt:'2026-01-01T00:00:00Z',label:'PhD'},
+          {id:'b',text:'Priority',starred:true,createdAt:'2026-05-01T00:00:00Z'},
+          {id:'c',text:'Other',createdAt:'2026-02-01T00:00:00Z'}
+        ]);
+        console.assert(priorityTodos(tdSamples).map(x=>x.id).join(',')==='b,a,c','starred tasks come first, followed by oldest');
+        console.assert(cleanTodos([{id:'z',text:'<script>',createdAt:'2026-05-01T00:00:00Z'}])[0].text==='<script>','user text remains data, escaped on rendering');
+        console.assert(cleanTodos([{id:'bad',text:'Hello',createdAt:'bad timestamp'}]).length===0,'invalid creation date rejected');
+        console.assert(oldCompleted({completed:false,completedAt:'2020-01-01T00:00:00Z'},Date.parse('2026-10-14'))===false,'unfinished work never expires');
+        console.assert(oldCompleted({completed:true},Date.parse('2026-10-14'))===false,'legacy completion without timestamp is preserved');
+        console.assert(oldCompleted({completed:true,completedAt:'2026-06-01T00:00:00Z'},Date.parse('2026-10-14'))===true,'older completed entries expire');
+        console.assert(oldCompleted({completed:true,completedAt:'2026-10-01T00:00:00Z'},Date.parse('2026-10-14'))===false,'recent completions retained');
         // Collections are a separate data model and must never affect deadline data.
         console.assert(sanitizeCollections([{id:'c1',name:'Journals',icon:'journal',color:GROUP_COLORS[1]}]).length===1,'collection sanitization');
         console.assert(sanitizeCollections([{id:'c1',name:'One'},{id:'c1',name:'Duplicate'}]).length===1,'collection IDs unique');
@@ -1378,17 +1675,23 @@
                     savedItems=sanitizeSavedItems(cloud.savedItems);
                     storeArray(SAVED_STORAGE,savedItems);
                 }else if(savedItems.length){needsUpgrade=true;}
-                if(needsUpgrade)await cloudSave(load()??[], true);
+                if(Array.isArray(cloud.todos)){
+                    todos=cleanTodos(cloud.todos);
+                    saveTodos();
+                }else if(todos.length){needsUpgrade=true;}
+                const purged=cleanupCompleted();
+                if(needsUpgrade||purged)await cloudSave(load()??[], true);
                 lastSync=Date.now();
             } else {
                 // New dashboard: upload existing local countdowns and groups together.
-                await cloudSave(localData, true);
+                await cloudSave(load()??localData, true);
             }
 
             // Rebuild and render the list based on the now-synchronized data
             items = rebuild();
             render();
             renderCollections();
+            renderTodos();
             updateSyncUI();
 
         } catch (e) {
