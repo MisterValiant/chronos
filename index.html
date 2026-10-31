@@ -382,6 +382,9 @@
     .todo-drag-handle{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#94a6cb;background:rgba(147,197,253,.05);border:1px solid rgba(147,197,253,.15);border-radius:7px;padding:0;width:24px;height:26px;cursor:grab;touch-action:none;user-select:none;font-size:14px;letter-spacing:-2px}
     .todo-drag-handle:hover,.todo-drag-handle:focus-visible{color:#dce9ff;border-color:rgba(147,197,253,.5);background:rgba(147,197,253,.13)}
     .todo-drag-handle:active{cursor:grabbing}
+    /* Disable snapping only while a drag is in progress, so edge scrolling remains fluid. */
+    .todo-rail.todo-reordering{scroll-snap-type:none;scroll-behavior:auto;cursor:grabbing}
+    .todo-rail.todo-reordering .todo-tile{scroll-snap-align:none}
     .todo-tile.todo-dragging,.todo-manager-entry.todo-dragging{opacity:.5;transform:scale(.98)}
     .todo-tile.todo-drop-target,.todo-manager-entry.todo-drop-target{outline:2px dashed #6ee7b7;outline-offset:2px}
     .todo-tile.todo-finishing,.todo-manager-entry.todo-finishing{animation:todoFinish .46s cubic-bezier(.2,.65,.3,1) forwards;border-color:#6ee7b7!important}
@@ -1800,61 +1803,135 @@
     todoRail.addEventListener('change',e=>{
       const el=e.target.closest('.todo-check[data-todo-action]');if(el)todoAction('complete',el.closest('[data-todo-id]').dataset.todoId);
     });
-    // Unified pointer drag for desktop mouse, touch and stylus. Only the grip initiates
-    // reordering, so ordinary horizontal scrolling on a card continues to work.
+    // Drag-and-drop with continuous edge auto-scroll. Holding a to-do near either
+    // horizontal edge keeps the rail moving, even when the pointer is stationary.
+    // Only the grip starts a drag; ordinary touch/swipe scrolling remains native.
     (function enableTodoReordering(){
-      let drag=null;
+      let drag=null,scrollFrame=null;
+      const EDGE=78,MAX_SCROLL_PER_FRAME=22;
       function clearTarget(){document.querySelectorAll('.todo-drop-target,.todo-dragging').forEach(el=>el.classList.remove('todo-drop-target','todo-dragging'));}
+      function stopScroll(){if(scrollFrame!==null){cancelAnimationFrame(scrollFrame);scrollFrame=null;}}
+      function edgeSpeed(position,low,high){
+        // At the edge accelerate smoothly up to MAX_SCROLL_PER_FRAME pixels at 60fps.
+        // Negative means left/up, positive means right/down.
+        if(position<low+EDGE)return -MAX_SCROLL_PER_FRAME*Math.min(1,(low+EDGE-position)/EDGE);
+        if(position>high-EDGE)return MAX_SCROLL_PER_FRAME*Math.min(1,(position-(high-EDGE))/EDGE);
+        return 0;
+      }
+      function nearestDropTarget(){
+        if(!drag||!drag.activated)return;
+        const parent=drag.parent,rect=parent.getBoundingClientRect(),rail=parent===todoRail;
+        // elementFromPoint still works if the pointer is just outside the scrolling
+        // viewport: clamp to the visible interior before looking up the target.
+        const x=Math.max(rect.left+5,Math.min(rect.right-5,drag.x));
+        const y=Math.max(rect.top+5,Math.min(rect.bottom-5,drag.y));
+        let target=document.elementFromPoint(x,y)?.closest('[data-todo-id]');
+        if(!target||!parent.contains(target)||target.dataset.todoId===drag.id){
+          // While the list scrolls under a stationary pointer, select the closest
+          // VISIBLE neighbor. Avoid selecting the 'View all' tile or the dragged card.
+          const candidates=[...parent.querySelectorAll('[data-todo-id]')].filter(el=>{
+            if(el.dataset.todoId===drag.id)return false;
+            const r=el.getBoundingClientRect();
+            return rail ? r.right>rect.left+2 && r.left<rect.right-2 : r.bottom>rect.top+2 && r.top<rect.bottom-2;
+          });
+          candidates.sort((a,b)=>{
+            const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();
+            const da=rail?Math.abs((ar.left+ar.right)/2-x):Math.abs((ar.top+ar.bottom)/2-y);
+            const db=rail?Math.abs((br.left+br.right)/2-x):Math.abs((br.top+br.bottom)/2-y);
+            return da-db;
+          });
+          target=candidates[0]||null;
+        }
+        parent.querySelectorAll('.todo-drop-target').forEach(el=>el.classList.remove('todo-drop-target'));
+        drag.targetId=target?.dataset.todoId||null;
+        target?.classList.add('todo-drop-target');
+      }
+      function autoScrollFrame(time){
+        scrollFrame=null;
+        if(!drag||!drag.activated)return;
+        const parent=drag.parent,rect=parent.getBoundingClientRect(),rail=parent===todoRail;
+        const velocity=rail?edgeSpeed(drag.x,rect.left,rect.right):edgeSpeed(drag.y,rect.top,rect.bottom);
+        if(!velocity)return;
+        const previous=rail?parent.scrollLeft:parent.scrollTop;
+        const dt=drag.lastFrame===null?16:Math.min(48,Math.max(1,time-drag.lastFrame));
+        drag.lastFrame=time;
+        const amount=velocity*dt/16;
+        if(rail)parent.scrollLeft+=amount;else parent.scrollTop+=amount;
+        const current=rail?parent.scrollLeft:parent.scrollTop;
+        if(current!==previous){
+          nearestDropTarget();
+          scrollFrame=requestAnimationFrame(autoScrollFrame);
+        }
+        // If we reach either end, stop until the pointer moves again.
+      }
+      function maybeAutoScroll(){
+        if(!drag||!drag.activated)return;
+        const rect=drag.parent.getBoundingClientRect(),rail=drag.parent===todoRail;
+        const speed=rail?edgeSpeed(drag.x,rect.left,rect.right):edgeSpeed(drag.y,rect.top,rect.bottom);
+        if(!speed){stopScroll();drag.lastFrame=null;return;}
+        if(scrollFrame===null){drag.lastFrame=null;scrollFrame=requestAnimationFrame(autoScrollFrame);}
+      }
+      function resetDrag(){
+        stopScroll();
+        if(drag){
+          drag.parent.classList.remove('todo-reordering');
+          try{if(drag.grip.hasPointerCapture?.(drag.pointerId))drag.grip.releasePointerCapture(drag.pointerId);}catch(_){}
+        }
+        drag=null;clearTarget();
+      }
       document.addEventListener('pointerdown',e=>{
         const grip=e.target.closest('.todo-drag-handle');if(!grip||e.button!==0)return;
         const parent=grip.closest('#todoRail,#todoManagerList');
         if(!parent || (parent.id==='todoManagerList'&&todoTab==='archive'))return;
-        const id=grip.dataset.todoDrag;
-        drag={id,parent,startX:e.clientX,startY:e.clientY,activated:false,targetId:null,pointerId:e.pointerId,grip};
-        grip.setPointerCapture?.(e.pointerId);
+        resetDrag();
+        drag={id:grip.dataset.todoDrag,parent,startX:e.clientX,startY:e.clientY,x:e.clientX,y:e.clientY,
+          activated:false,targetId:null,pointerId:e.pointerId,grip,lastFrame:null};
+        try{grip.setPointerCapture?.(e.pointerId);}catch(_){}
       });
       document.addEventListener('pointermove',e=>{
-        if(!drag ||e.pointerId!==drag.pointerId)return;
-        const moved=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY);
-        if(!drag.activated&&moved<7)return;
-        drag.activated=true;e.preventDefault();
-        const origin=drag.parent.querySelector(`[data-todo-id="${CSS.escape(drag.id)}"]`);
-        origin?.classList.add('todo-dragging');
-        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-todo-id]');
-        drag.parent.querySelectorAll('.todo-drop-target').forEach(el=>el.classList.remove('todo-drop-target'));
-        if(target&&drag.parent.contains(target)&&target.dataset.todoId!==drag.id){drag.targetId=target.dataset.todoId;target.classList.add('todo-drop-target');}
-        else drag.targetId=null;
-        const rect=drag.parent.getBoundingClientRect();
-        if(drag.parent===todoRail){
-          if(e.clientX>rect.right-30)drag.parent.scrollLeft+=14;
-          if(e.clientX<rect.left+30)drag.parent.scrollLeft-=14;
-        } else {
-          if(e.clientY>rect.bottom-30)drag.parent.scrollTop+=12;
-          if(e.clientY<rect.top+30)drag.parent.scrollTop-=12;
+        if(!drag||e.pointerId!==drag.pointerId)return;
+        drag.x=e.clientX;drag.y=e.clientY;
+        if(!drag.activated&&Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY)<7)return;
+        if(!drag.activated){
+          drag.activated=true;
+          drag.parent.classList.add('todo-reordering');
+          drag.parent.querySelector(`[data-todo-id="${CSS.escape(drag.id)}"]`)?.classList.add('todo-dragging');
         }
+        e.preventDefault();
+        nearestDropTarget();
+        maybeAutoScroll();
       },{passive:false});
       function drop(e){
         if(!drag||e.pointerId!==drag.pointerId)return;
-        const saved=drag;drag=null;
-        const ids=Array.from(saved.parent.querySelectorAll('[data-todo-id]')).map(el=>el.dataset.todoId);
-        clearTarget();
-        if(saved.activated&&saved.targetId)reorderTodos(saved.id,saved.targetId,ids);
+        // Re-evaluate after the last scroll frame before committing the new order.
+        if(drag.activated)nearestDropTarget();
+        const saved=drag;
+        const ids=[...saved.parent.querySelectorAll('[data-todo-id]')].map(el=>el.dataset.todoId);
+        const position=saved.parent===todoRail?saved.parent.scrollLeft:null;
+        resetDrag();
+        if(saved.activated&&saved.targetId&&reorderTodos(saved.id,saved.targetId,ids)&&position!==null){
+          // renderTodos rebuilds the rail; restore the user's current scroll position.
+          todoRail.scrollLeft=position;
+        }
       }
       document.addEventListener('pointerup',drop);
-      document.addEventListener('pointercancel',()=>{drag=null;clearTarget();});
+      document.addEventListener('pointercancel',resetDrag);
+      window.addEventListener('blur',resetDrag);
       document.addEventListener('keydown',e=>{
         const grip=e.target.closest('.todo-drag-handle');if(!grip)return;
         const parent=grip.closest('#todoRail,#todoManagerList');if(!parent)return;
         const isRail=parent===todoRail;
-        const previous=e.key===(isRail?'ArrowLeft':'ArrowUp'), next=e.key===(isRail?'ArrowRight':'ArrowDown');
+        const previous=e.key===(isRail?'ArrowLeft':'ArrowUp'),next=e.key===(isRail?'ArrowRight':'ArrowDown');
         if(!previous&&!next)return;
         e.preventDefault();
-        const ids=Array.from(parent.querySelectorAll('[data-todo-id]')).map(el=>el.dataset.todoId);
+        const ids=[...parent.querySelectorAll('[data-todo-id]')].map(el=>el.dataset.todoId);
         const index=ids.indexOf(grip.dataset.todoDrag),newIndex=index+(previous?-1:1);
         if(index<0||newIndex<0||newIndex>=ids.length)return;
         const moved=grip.dataset.todoDrag;
         if(reorderTodos(moved,ids[newIndex],ids)){
-          (parent.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`)||document.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`))?.focus({preventScroll:true});
+          const replacement=parent.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`)||document.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`);
+          replacement?.focus({preventScroll:true});
+          if(isRail)replacement?.scrollIntoView({block:'nearest',inline:'nearest'});
         }
       });
     })();
