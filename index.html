@@ -180,8 +180,8 @@
     .todo-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
     .todo-heading .section-head{margin:0;flex:1}
     .todo-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .todo-rail{display:flex;gap:11px;overflow-x:auto;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:2px 1px 13px;scrollbar-width:thin;scrollbar-color:rgba(147,197,253,.36) transparent}
-    .todo-rail::-webkit-scrollbar{height:6px}.todo-rail::-webkit-scrollbar-thumb{background:rgba(147,197,253,.32);border-radius:12px}
+    .todo-rail{display:flex;gap:11px;overflow-x:auto;scroll-snap-type:x proximity;overscroll-behavior-x:contain;padding:2px 1px 13px;scrollbar-width:auto;scrollbar-color:rgba(147,197,253,.56) rgba(147,197,253,.08)}
+    .todo-rail::-webkit-scrollbar{height:11px}.todo-rail::-webkit-scrollbar-track{background:rgba(147,197,253,.09);border-radius:12px}.todo-rail::-webkit-scrollbar-thumb{background:rgba(147,197,253,.58);border-radius:12px;border:2px solid rgba(12,18,43,.4)}.todo-rail::-webkit-scrollbar-thumb:hover{background:#93c5fd}
     .todo-tile{display:flex;flex-direction:column;gap:8px;flex:0 0 clamp(220px,23vw,270px);min-width:0;min-height:96px;scroll-snap-align:start;padding:11px 12px;border-radius:15px;border:1px solid rgba(255,255,255,.115);background:linear-gradient(150deg,rgba(255,255,255,.065),rgba(255,255,255,.025));transition:border-color .16s,background .16s;position:relative;isolation:isolate;overflow:hidden}
     .todo-tile > :not(.todo-network){position:relative;z-index:1}
     /* Tiny ambient connected points: decorative only, never an interactive surface. */
@@ -256,7 +256,7 @@
     #signin.signin-btn:hover { background: white; }
     #signout { display:inline-flex; align-items:center; gap:8px; color:#17203a; background:#f5f7ff; border-color:rgba(255,255,255,.60); font-weight:700; }
     #signout:hover { background:#fff; color:#10182d; }
-    #signout .exit-person { width:17px; height:17px; display:block; flex:none; color:#6ee7b7; }
+    #signout .exit-person { width:17px; height:17px; display:block; flex:none; color:#08794f; stroke-width:2.4; }
     /* Hide completed checkbox: no unthemed system checkbox */
     #hideDone { appearance:none; -webkit-appearance:none; width:17px; height:17px; margin:0 3px 0 0 !important; border:1px solid rgba(197,209,255,.45); border-radius:5px; background:rgba(4,9,27,.42); display:inline-grid; place-items:center; cursor:pointer; flex:none; transition:background .15s,border-color .15s; }
     #hideDone:checked { background:#6ee7b7; border-color:#6ee7b7; }
@@ -345,6 +345,43 @@
     @keyframes vesperHeart{0%,100%{opacity:.84}50%{opacity:1}}
     @media(hover:none),(pointer:coarse){#vesperPointer{display:none}}
     @media(prefers-reduced-motion:reduce){#vesperPointer{display:none}#vesperPointer *{animation:none!important}}
+
+    /* Patch: modal editor always sits above history. */
+    #todoManagerModal{z-index:70}
+    #todoEditModal{z-index:80}
+    #todoManagerModal.manager-under-editor{pointer-events:none}
+    .modal .sheet{overscroll-behavior:contain}
+    /* Group cards differ from the four focus cards via quiet group-coloured starlight. */
+    .group-deadline-card{position:relative;isolation:isolate;overflow:hidden;border-color:color-mix(in srgb,var(--group-card-color) 34%,transparent);background:linear-gradient(150deg,color-mix(in srgb,var(--group-card-color) 9%,rgba(30,35,62,.98)),rgba(24,29,57,.88))}
+    .group-deadline-card > :not(.group-card-sky){position:relative;z-index:1}
+    .group-deadline-card .actions{position:absolute;z-index:3}
+    .group-card-sky{position:absolute;inset:0;width:100%;height:100%;color:var(--group-card-color);pointer-events:none;opacity:.28;z-index:0}
+    .group-star-layer{fill:currentColor;animation:groupStarlight 11s ease-in-out infinite alternate;transform-origin:center}
+    @keyframes groupStarlight{from{opacity:.48;transform:translate(-4px,3px)}to{opacity:.98;transform:translate(4px,-4px)}}
+    .group-deadline-card:hover .group-card-sky{opacity:.4}
+    /* Age border and star colours: urgent stale tasks get red priority glow. */
+    .todo-tile.age-aging,.todo-manager-entry.age-aging{border-color:rgba(245,166,75,.59)}
+    .todo-tile.age-stale,.todo-manager-entry.age-stale{border-color:rgba(251,113,133,.7)}
+    .todo-tile.age-aging.starred,.todo-manager-entry.age-aging.starred{background:linear-gradient(145deg,rgba(243,162,72,.15),rgba(255,255,255,.025));border-color:rgba(245,166,75,.85)}
+    .todo-tile.age-stale.starred,.todo-manager-entry.age-stale.starred{background:linear-gradient(145deg,rgba(251,113,133,.17),rgba(255,255,255,.025));border-color:rgba(251,113,133,.92)}
+    .todo-tile.age-aging .todo-star-btn.star-on,.todo-manager-entry.age-aging .todo-star-btn.star-on{color:#f8b45d;text-shadow:0 0 12px rgba(248,175,81,.52)}
+    .todo-tile.age-stale .todo-star-btn.star-on,.todo-manager-entry.age-stale .todo-star-btn.star-on{color:#ff8192;text-shadow:0 0 12px rgba(255,99,128,.58)}
+    .todo-tile.age-stale .todo-date,.todo-manager-entry.age-stale .todo-manager-meta:first-child{color:#ff99a8}
+    .todo-age-elapsed{color:#fb8294;font-weight:700;white-space:nowrap;font-size:10px}
+    .todo-pin-badge{display:inline-flex;align-items:center;gap:3px;flex:none;font-size:9px;line-height:1.3;color:#a8d7fe;border:1px solid rgba(147,197,253,.27);background:rgba(147,197,253,.08);border-radius:5px;padding:2px 4px}
+    .todo-drag-handle{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#94a6cb;background:rgba(147,197,253,.05);border:1px solid rgba(147,197,253,.15);border-radius:7px;padding:0;width:24px;height:26px;cursor:grab;touch-action:none;user-select:none;font-size:14px;letter-spacing:-2px}
+    .todo-drag-handle:hover,.todo-drag-handle:focus-visible{color:#dce9ff;border-color:rgba(147,197,253,.5);background:rgba(147,197,253,.13)}
+    .todo-drag-handle:active{cursor:grabbing}
+    .todo-tile.todo-dragging,.todo-manager-entry.todo-dragging{opacity:.5;transform:scale(.98)}
+    .todo-tile.todo-drop-target,.todo-manager-entry.todo-drop-target{outline:2px dashed #6ee7b7;outline-offset:2px}
+    .todo-tile.todo-finishing,.todo-manager-entry.todo-finishing{animation:todoFinish .46s cubic-bezier(.2,.65,.3,1) forwards;border-color:#6ee7b7!important}
+    .todo-tile.todo-finishing::after,.todo-manager-entry.todo-finishing::after{content:'✓ Completed';position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(9,35,45,.90);color:#8af4d4;font-size:14px;font-weight:750;letter-spacing:.3px;pointer-events:none;border-radius:inherit}
+    .todo-manager-entry{position:relative;min-width:0}
+    @keyframes todoFinish{0%{opacity:1;transform:scale(1)}55%{opacity:1;transform:scale(1.025)}100%{opacity:0;transform:scale(.96)}}
+    .todo-manager-note{max-width:100%}
+    .todo-form-note{min-height:124px;max-height:290px}
+    .todo-reset-inline[hidden]{display:none!important}
+    @media(prefers-reduced-motion:reduce){.group-star-layer,.todo-finishing{animation:none!important}.todo-tile.todo-finishing,.todo-manager-entry.todo-finishing{opacity:.8;transform:none}}
   </style>
 </head>
 <body>
@@ -393,8 +430,8 @@
     <hr class="separator"/>
     <section class="section todo-section" aria-labelledby="todoTitle">
       <div class="todo-heading">
-        <div class="section-head"><div><h2 class="section-title" id="todoTitle">To-do list</h2><p class="section-note">A small checklist for today's work · starred first, then oldest created</p></div><span class="section-count" id="todoCount">0 active</span></div>
-        <div class="todo-controls"><button class="pill" id="todoAdd" type="button">+ To-do</button><button class="pill" id="todoViewAll" type="button">View all &amp; history</button></div>
+        <div class="section-head"><div><h2 class="section-title" id="todoTitle">To-do list</h2><p class="section-note">Starred first, then oldest · drag ⠿ to reorder</p></div><span class="section-count" id="todoCount">0 active</span></div>
+        <div class="todo-controls"><button class="pill todo-reset-inline" id="todoResetRail" type="button" title="Return to automatic age order" hidden>Reset order</button><button class="pill" id="todoAdd" type="button">+ To-do</button><button class="pill" id="todoViewAll" type="button">View all &amp; history</button></div>
       </div>
       <div class="todo-rail" id="todoRail" role="list" aria-label="Priority to-dos, scroll horizontally"></div>
     </section>
@@ -445,7 +482,7 @@
       <form id="todoForm" class="f">
         <label>Task <input id="todoText" required maxlength="200" placeholder="e.g., Prepare unsupervised learning slides"/></label>
         <label>Label (optional — type your own) <input id="todoLabel" maxlength="45" placeholder="e.g., PhD, Work, ISAD" list="todoLabels"/></label><datalist id="todoLabels"></datalist>
-        <label>Notes (optional) <textarea id="todoNotes" class="todo-form-note" maxlength="600" rows="2" placeholder="Small reminders or next steps"></textarea></label>
+        <label>Notes (optional) <textarea id="todoNotes" class="todo-form-note" maxlength="5000" rows="4" placeholder="Small reminders or next steps"></textarea></label>
         <div class="todo-form-options">
           <label class="todo-star-label"><input id="todoStar" type="checkbox"/><span class="todo-star-chip"><span class="todo-star-symbol" aria-hidden="true"></span><span>Star as priority</span></span></label>
           <label class="todo-hide-label"><input id="todoHidden" type="checkbox"/><span class="todo-hide-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 5.2a10.6 10.6 0 0 1 1.4-.1c5.1 0 9.1 3 10 6.9a11 11 0 0 1-3.8 5.3M6.6 6.5A11 11 0 0 0 2 12c1 4 5 7 10 7 1.1 0 2.2-.1 3.1-.4M9.8 9.7a3 3 0 0 0 4.5 4.4"/></svg><span>Hidden</span></span></label>
@@ -468,10 +505,10 @@
         <button type="button" class="todo-tab" data-todo-tab="archive" aria-selected="false" role="tab">On-device archive</button>
       </div>
       <div id="todoManagerList" class="todo-manager-list" aria-live="polite"></div>
-      <p class="todo-manager-note">Completed visible items are retained in the cloud for 90 days, then moved to a local archive on this device when Chronos next opens or checks. Hidden to-dos are excluded from automatic cleanup. Archive entries are not synced. Old completed deadlines follow the same rule; unfinished deadlines are never auto-deleted.</p>
+      <p class="todo-manager-note">Drag the ⠿ grip to reorder (or use arrow keys on the grip). Manual order is synced; Reset order restores oldest-first sorting. Completed visible items are retained in the cloud for 90 days, then moved to a local archive on this device when Chronos next opens or checks. Hidden to-dos are excluded from automatic cleanup. Archive entries are not synced. Old completed deadlines follow the same rule; unfinished deadlines are never auto-deleted.</p>
       <div class="rowline" style="justify-content:space-between;margin-top:14px">
         <button class="btn" id="todoExport" type="button">Export all to-dos &amp; archive</button>
-        <button class="btn" id="todoManagerAdd" type="button">+ New to-do</button>
+        <div class="rowline"><button class="btn" id="todoResetOrder" type="button" title="Return to age-based automatic order">Reset order</button><button class="btn" id="todoManagerAdd" type="button">+ New to-do</button></div>
       </div>
     </div>
   </div>
@@ -802,8 +839,9 @@
         if(!id||!text||!createdAt||seen.has(id))return null;
         seen.add(id);
         const completed=!!it?.completed;
-        return {id,text, label:String(it?.label??'').trim().slice(0,45),notes:String(it?.notes??'').trim().slice(0,600),
+        return {id,text, label:String(it?.label??'').trim().slice(0,45),notes:String(it?.notes??'').trim().slice(0,5000),
           starred:!!it?.starred,hidden:!!it?.hidden,createdAt,completed,
+          pinned:!!it?.pinned, ...(Number.isFinite(it?.orderIndex)&&it.orderIndex>=0?{orderIndex:it.orderIndex}:{}),
           ...(completed && isoStamp(it?.completedAt)?{completedAt:isoStamp(it.completedAt)}:{})};
       }).filter(Boolean);
     }
@@ -814,7 +852,28 @@
     let todos=readArray(TODO_STORAGE,cleanTodos);
     let localArchive=readArray(TODO_ARCHIVE_STORAGE,cleanArchive);
     function saveTodos(){todos=cleanTodos(todos);storeArray(TODO_STORAGE,todos);}
-    function priorityTodos(source=todos){return [...source].filter(it=>!it.completed && !it.hidden).sort((a,b)=>Number(b.starred)-Number(a.starred) || new Date(a.createdAt)-new Date(b.createdAt) || a.id.localeCompare(b.id));}
+    function ageSort(a,b){
+      // Starred tasks stay highest priority; within each priority tier, older unfinished tasks are more urgent.
+      return Number(b.starred)-Number(a.starred) || new Date(a.createdAt)-new Date(b.createdAt) || a.id.localeCompare(b.id);
+    }
+    function orderedTodos(list){
+      const hasManual=list.some(it=>Number.isFinite(it.orderIndex));
+      return [...list].sort((a,b)=>hasManual
+        ? (Number.isFinite(a.orderIndex)?a.orderIndex:Infinity)-(Number.isFinite(b.orderIndex)?b.orderIndex:Infinity)||ageSort(a,b)
+        : ageSort(a,b));
+    }
+    function priorityTodos(source=todos){return orderedTodos(source.filter(it=>!it.completed && !it.hidden));}
+    function resetTodoOrder(){todos.forEach(it=>{delete it.orderIndex;it.pinned=false;});saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});playSound('update');}
+    function reorderTodos(dragId,targetId,visibleIds){
+      if(!dragId || dragId===targetId)return false;
+      const order=visibleIds.filter(id=>todos.some(t=>t.id===id));
+      const from=order.indexOf(dragId),to=order.indexOf(targetId);
+      if(from<0||to<0)return false;
+      order.splice(from,1);order.splice(to,0,dragId);
+      order.forEach((id,i)=>{const it=todos.find(t=>t.id===id);if(it)it.orderIndex=i;});
+      const moved=todos.find(it=>it.id===dragId);if(moved)moved.pinned=true;
+      saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});playSound('open');return true;
+    }
     const todoFmt = stamp => new Date(stamp).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
     const todoDateTimeFmt = stamp => new Date(stamp).toLocaleString(undefined,{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
     // One-word labels stay legible; multiple words become initialisms (e.g., "Unsupervised Machine Learning" -> "UML").
@@ -863,6 +922,11 @@
       const label=age==='fresh'?'Created within 3 days':age==='aging'?'Created 3–5 days ago':'Created 5 or more days ago';
       return `<span class="todo-age-dot ${age}" data-created-at="${esc(createdAt)}" role="img" aria-label="${label}" title="${label}"></span>`;
     }
+    function todoAgeDays(createdAt,now=Date.now()){return Math.max(0,Math.floor((now-new Date(createdAt).getTime())/864e5));}
+    function todoTileClass(it){return `age-${todoAgeClass(it.createdAt)}${it.starred?' starred':''}`;}
+    function todoAgeElapsed(it){return todoAgeClass(it.createdAt)==='stale'?`<span class="todo-age-elapsed">(${todoAgeDays(it.createdAt)} days)</span>`:'';}
+    function todoPinBadge(it){return it.pinned?'<span class="todo-pin-badge" title="Manually placed in this order">↧ Pinned</span>':'';}
+    function todoDragHandle(it){return `<button type="button" class="todo-drag-handle" data-todo-drag="${esc(it.id)}" title="Drag to reorder (or use arrow keys)" aria-label="Reorder ${esc(it.text)} with drag or arrow keys">⠿</button>`;}
     const TODO_NETWORK=`<svg class="todo-network" viewBox="0 0 170 90" aria-hidden="true" focusable="false"><g class="todo-network-inner"><path class="todo-network-path" d="M3 70 27 48 46 69 65 42 85 61 112 23 140 39 167 15 M27 48 48 25 65 42 91 14 112 23 M46 69 85 61 113 81 140 39 157 67 M65 42 112 23 113 81 M91 14 140 39"/><g class="todo-network-glint">${[[3,70,2.1],[27,48,2.5],[46,69,2.4],[65,42,2.3],[85,61,2.5],[112,23,3],[140,39,2.7],[167,15,2.2],[48,25,2],[91,14,2.2],[113,81,2.3],[157,67,2.5]].map(([x,y,r])=>`<circle class="todo-network-dot" cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g></g></svg>`;
     // Update age indicators without rebuilding tiles (so animations stay smooth).
     function refreshTodoAgeDots(){
@@ -872,6 +936,10 @@
           dot.classList.remove('fresh','aging','stale');dot.classList.add(age);
           const label=age==='fresh'?'Created within 3 days':age==='aging'?'Created 3–5 days ago':'Created 5 or more days ago';
           dot.title=label;dot.setAttribute('aria-label',label);
+          const tile=dot.closest('.todo-tile,.todo-manager-entry');
+          if(tile){tile.classList.remove('age-fresh','age-aging','age-stale');tile.classList.add('age-'+age);}
+          const elapsed=tile?.querySelector('.todo-age-elapsed');
+          if(elapsed)elapsed.textContent='('+todoAgeDays(dot.dataset.createdAt)+' days)';
         }
       });
     }
@@ -1116,7 +1184,7 @@
     }
     const box = (n,l,k) => `<div class="chunk" data-unit="${k}"><span class="num">${String(n).padStart(2,'0')}</span><span class="lab">${l}</span></div>`;
 
-    function card(it, now, hide){
+    function card(it, now, hide, inGroup=false){
       if(it.completed && hide) return '';
       const ms = it.due - now;
       const p = parts(ms);
@@ -1134,7 +1202,8 @@
         dateClass = 'warning-status';
       }
 
-      return `<article class="card${it.completed?' completed':''}" data-idx="${it.idx}" role="listitem">
+      return `<article class="card${it.completed?' completed':''}${inGroup?' group-deadline-card':''}" ${inGroup?`style="--group-card-color:${safeColor(groupFor(it)?.color||'#a5b4fc')}"`:''} data-idx="${it.idx}" role="listitem">
+        ${inGroup?GROUP_STARS:''}
         <div class="badge-line"><span class="badge">${badge}</span></div>
         <div class="actions">
           ${it.url ? `<a class="icon link-icon" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" title="Open link in new tab" aria-label="Open link for ${esc(it.name)}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></a>` : ''}
@@ -1148,6 +1217,7 @@
       </article>`;
     }
 
+    const GROUP_STARS=`<svg class="group-card-sky" viewBox="0 0 280 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><g class="group-star-layer"><path d="M25 21v7m-3.5-3.5h7M89 57v5m-2.5-2.5h5M212 32v7m-3.5-3.5h7M247 112v5m-2.5-2.5h5M144 143v6m-3-3h6" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><circle cx="56" cy="110" r="1.6"/><circle cx="163" cy="24" r="1.3"/><circle cx="196" cy="86" r="1.7"/><circle cx="20" cy="151" r="1.2"/><circle cx="267" cy="161" r="1.6"/><circle cx="118" cy="98" r="1.2"/></g></svg>`;
     const groupChevron = '<svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     function render(){
       const focus = document.activeElement?.closest?.('[data-group-action="toggle"]');
@@ -1157,7 +1227,7 @@
       grid.innerHTML=overview.length ? overview.map(i=>card(i,now,false)).join('') : '<div class="empty-state">No upcoming deadlines. Add a countdown or browse your groups below.</div>';
       $('#overviewCount').textContent=overview.length+' / 4';
       sortItems(sortSel.value);
-      const sectionCards=list=>list.map(i=>card(i,now,false)).join('');
+      const sectionCards=list=>list.map(i=>card(i,now,false,true)).join('');
       groupSections.innerHTML=groups.map(g=>{
         const visible=visibleTasks(items.filter(i=>i.groupId===g.id));
         const expanded=expandedGroupId===g.id;
@@ -1588,20 +1658,29 @@
       const active=priorityTodos();
       $('#todoCount').textContent=active.length+' active';
       const showcase=active.slice(0,10);
-      todoRail.innerHTML=showcase.map(it=>`<article class="todo-tile${it.starred?' starred':''}" role="listitem" data-todo-id="${esc(it.id)}">
+      todoRail.innerHTML=showcase.map(it=>`<article class="todo-tile ${todoTileClass(it)}" role="listitem" data-todo-id="${esc(it.id)}">
         ${TODO_NETWORK}
         <div class="todo-tile-main"><input type="checkbox" class="todo-check" data-todo-action="complete" aria-label="Complete ${esc(it.text)}" title="Mark completed"/>
           <div class="todo-copy"><p class="todo-title" title="${esc(it.text)}">${esc(it.text)}</p></div>
           <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" aria-pressed="${!!it.starred}" aria-label="${it.starred?'Unstar':'Star'} ${esc(it.text)}" title="${it.starred?'Remove priority':'Star as priority'}">${it.starred?'★':'☆'}</button>
         </div>
         <div class="todo-tile-foot">${it.label?todoTag(it.label):''}
-          ${todoAgeDot(it.createdAt)}<span class="todo-date">${esc(todoFmt(it.createdAt))}</span>
-          <span style="flex:1"></span><button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit to-do" aria-label="Edit ${esc(it.text)}">✎</button>
+          ${todoAgeDot(it.createdAt)}<span class="todo-date">${esc(todoFmt(it.createdAt))}</span>${todoAgeElapsed(it)}
+          ${todoPinBadge(it)}<span style="flex:1"></span>${todoDragHandle(it)}<button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit to-do" aria-label="Edit ${esc(it.text)}">✎</button>
         </div></article>`).join('') || '<p class="todo-empty">Nothing pending. Add a to-do when you have something to tackle.</p>';
       if(active.length>10)todoRail.insertAdjacentHTML('beforeend',`<button class="todo-tile" type="button" id="todoMore" style="justify-content:center;align-items:center;color:#c6dbff">+${active.length-10} more · View all →</button>`);
+      $('#todoResetRail').hidden=!todos.some(it=>Number.isFinite(it.orderIndex));
       if(todoManagerModal.classList.contains('show'))renderTodoManager();
     }
-    function closeTodoEdit(){todoEditModal.classList.remove('show');todoEditModal.setAttribute('aria-hidden','true');editingTodoId=null;$('#todoForm').reset();}
+    function closeTodoEdit(){
+      todoEditModal.classList.remove('show');todoEditModal.setAttribute('aria-hidden','true');
+      if(todoManagerModal.classList.contains('show')){
+        todoManagerModal.classList.remove('manager-under-editor');
+        todoManagerModal.removeAttribute('inert');todoManagerModal.setAttribute('aria-hidden','false');
+        $('#todoManagerAdd').focus({preventScroll:true});
+      }
+      editingTodoId=null;$('#todoForm').reset();
+    }
     function openTodoEdit(id=null){
       const it=todos.find(x=>x.id===id);
       editingTodoId=it?.id||null;
@@ -1611,13 +1690,17 @@
       $('#todoEditHeading').textContent=it?'Edit to-do':'Add a to-do';
       const labels=[...new Set(todos.map(x=>x.label).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
       $('#todoLabels').innerHTML=labels.map(label=>`<option value="${esc(label)}"></option>`).join('');
+      if(todoManagerModal.classList.contains('show')){
+        todoManagerModal.classList.add('manager-under-editor');
+        todoManagerModal.setAttribute('aria-hidden','true');todoManagerModal.setAttribute('inert','');
+      }
       todoEditModal.classList.add('show');todoEditModal.setAttribute('aria-hidden','false');
       setTimeout(()=>$('#todoText').focus(),0);
     }
     function openTodoManager(tab='active'){
       todoTab=tab;todoManagerModal.classList.add('show');todoManagerModal.setAttribute('aria-hidden','false');renderTodoManager();
     }
-    function closeTodoManager(){todoManagerModal.classList.remove('show');todoManagerModal.setAttribute('aria-hidden','true');}
+    function closeTodoManager(){if(todoEditModal.classList.contains('show'))closeTodoEdit();todoManagerModal.classList.remove('show');todoManagerModal.classList.remove('manager-under-editor');todoManagerModal.removeAttribute('inert');todoManagerModal.setAttribute('aria-hidden','true');}
     function archiveRecord(it){
       return `<div class="todo-manager-entry"><div class="todo-manager-info"><strong>${esc(it.record.text||it.record.name||'Untitled')}</strong>
         <div class="todo-manager-meta">${it.kind==='deadline'?'Deadline':'To-do'} · Completed ${it.record.completedAt?esc(todoDateTimeFmt(it.record.completedAt)):'date unknown'} · Archived ${esc(todoFmt(it.archivedAt))} on this device</div>
@@ -1630,23 +1713,35 @@
         target.innerHTML=localArchive.length?[...localArchive].reverse().map(archiveRecord).join(''):'<p class="todo-empty">No older completed entries archived on this device yet.</p>';
         return;
       }
-      const list=todoTab==='active' ? priorityTodos() : todoTab==='hidden' ? [...todos].filter(it=>it.hidden).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
-        : [...todos].filter(it=>it.completed && !it.hidden).sort((a,b)=>new Date(b.completedAt||0)-new Date(a.completedAt||0));
-      target.innerHTML=list.map(it=>`<div class="todo-manager-entry" data-todo-id="${esc(it.id)}">
+      const list=todoTab==='active' ? priorityTodos() : todoTab==='hidden' ? orderedTodos(todos.filter(it=>it.hidden))
+        : orderedTodos(todos.filter(it=>it.completed && !it.hidden));
+      target.innerHTML=list.map(it=>`<div class="todo-manager-entry ${todoTileClass(it)}" data-todo-id="${esc(it.id)}">
         <input type="checkbox" class="todo-check" data-todo-action="complete" ${it.completed?'checked':''} aria-label="${it.completed?'Reopen':'Complete'} ${esc(it.text)}"/>
         <div class="todo-manager-info"><strong>${it.starred?'★ ':''}${esc(it.text)}</strong>
-          <div class="todo-manager-meta">${it.label?`${todoTag(it.label)} · `:''}Created ${esc(todoDateTimeFmt(it.createdAt))}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}${it.hidden?' · <span class="todo-hidden-hint">Hidden</span>':''}</div>
+          <div class="todo-manager-meta">${it.label?`${todoTag(it.label)} · `:''}${todoAgeDot(it.createdAt)} Created ${esc(todoDateTimeFmt(it.createdAt))} ${todoAgeElapsed(it)} ${todoPinBadge(it)}${it.completed?` · Completed ${it.completedAt?esc(todoDateTimeFmt(it.completedAt)):'date unavailable'}`:''}${it.hidden?' · <span class="todo-hidden-hint">Hidden</span>':''}</div>
           ${it.notes?`<div class="todo-manager-meta">${esc(it.notes)}</div>`:''}
-        </div><div class="todo-manager-actions">
+        </div><div class="todo-manager-actions">${todoDragHandle(it)}
           <button type="button" class="todo-icon-btn todo-star-btn${it.starred?' star-on':''}" data-todo-action="star" title="${it.starred?'Unstar':'Star'}" aria-label="Change priority">${it.starred?'★':'☆'}</button>
           <button type="button" class="todo-icon-btn" data-todo-action="visibility" title="${it.hidden?'Show in active list':'Hide from active list'}" aria-label="${it.hidden?'Unhide':'Hide'} task">${it.hidden?'◉':'◌'}</button>
           <button type="button" class="todo-icon-btn" data-todo-action="edit" title="Edit task" aria-label="Edit">✎</button>
           <button type="button" class="todo-icon-btn" data-todo-action="delete" title="Delete task" aria-label="Delete">×</button>
         </div></div>`).join('')||`<p class="todo-empty">${todoTab==='history'?'No completed tasks yet.':todoTab==='hidden'?'No hidden to-dos.':'All caught up!'}</p>`;
     }
-    function persistTodoChanges(sound='update',completedNow=false){
+    function persistTodoChanges(sound='update',completedNow=false,skipSound=false){
       saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});
-      if(completedNow){playSound('complete');celebrateCompletion();} else playSound(sound);
+      if(completedNow){playSound('complete');celebrateCompletion();} else if(!skipSound)playSound(sound);
+    }
+    const finishingTodos=new Set();
+    function finishTodoAfterAnimation(it){
+      if(finishingTodos.has(it.id))return;
+      finishingTodos.add(it.id);
+      document.querySelectorAll('[data-todo-id]').forEach(el=>{if(el.dataset.todoId===it.id)el.classList.add('todo-finishing');});
+      playSound('complete');celebrateCompletion();
+      const finish=()=>{
+        it.completed=true;it.completedAt=new Date().toISOString();
+        finishingTodos.delete(it.id);persistTodoChanges('update',false,true);
+      };
+      window.setTimeout(finish,window.matchMedia('(prefers-reduced-motion: reduce)').matches?160:470);
     }
     function todoAction(action,id){
       const it=todos.find(x=>x.id===id);if(!it)return;
@@ -1662,11 +1757,9 @@
         it.starred=!it.starred;persistTodoChanges();return;
       }
       if(action==='complete'){
-        const completing=!it.completed;
-        it.completed=completing;
-        if(completing)it.completedAt=new Date().toISOString();
-        else delete it.completedAt;
-        persistTodoChanges('update',completing);
+        if(finishingTodos.has(id))return;
+        if(!it.completed){finishTodoAfterAnimation(it);return;}
+        it.completed=false;delete it.completedAt;persistTodoChanges('update',false);
       }
     }
     todoRail.addEventListener('click',e=>{
@@ -1677,6 +1770,66 @@
     todoRail.addEventListener('change',e=>{
       const el=e.target.closest('.todo-check[data-todo-action]');if(el)todoAction('complete',el.closest('[data-todo-id]').dataset.todoId);
     });
+    // Unified pointer drag for desktop mouse, touch and stylus. Only the grip initiates
+    // reordering, so ordinary horizontal scrolling on a card continues to work.
+    (function enableTodoReordering(){
+      let drag=null;
+      function clearTarget(){document.querySelectorAll('.todo-drop-target,.todo-dragging').forEach(el=>el.classList.remove('todo-drop-target','todo-dragging'));}
+      document.addEventListener('pointerdown',e=>{
+        const grip=e.target.closest('.todo-drag-handle');if(!grip||e.button!==0)return;
+        const parent=grip.closest('#todoRail,#todoManagerList');
+        if(!parent || (parent.id==='todoManagerList'&&todoTab==='archive'))return;
+        const id=grip.dataset.todoDrag;
+        drag={id,parent,startX:e.clientX,startY:e.clientY,activated:false,targetId:null,pointerId:e.pointerId,grip};
+        grip.setPointerCapture?.(e.pointerId);
+      });
+      document.addEventListener('pointermove',e=>{
+        if(!drag ||e.pointerId!==drag.pointerId)return;
+        const moved=Math.hypot(e.clientX-drag.startX,e.clientY-drag.startY);
+        if(!drag.activated&&moved<7)return;
+        drag.activated=true;e.preventDefault();
+        const origin=drag.parent.querySelector(`[data-todo-id="${CSS.escape(drag.id)}"]`);
+        origin?.classList.add('todo-dragging');
+        const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-todo-id]');
+        drag.parent.querySelectorAll('.todo-drop-target').forEach(el=>el.classList.remove('todo-drop-target'));
+        if(target&&drag.parent.contains(target)&&target.dataset.todoId!==drag.id){drag.targetId=target.dataset.todoId;target.classList.add('todo-drop-target');}
+        else drag.targetId=null;
+        const rect=drag.parent.getBoundingClientRect();
+        if(drag.parent===todoRail){
+          if(e.clientX>rect.right-30)drag.parent.scrollLeft+=14;
+          if(e.clientX<rect.left+30)drag.parent.scrollLeft-=14;
+        } else {
+          if(e.clientY>rect.bottom-30)drag.parent.scrollTop+=12;
+          if(e.clientY<rect.top+30)drag.parent.scrollTop-=12;
+        }
+      },{passive:false});
+      function drop(e){
+        if(!drag||e.pointerId!==drag.pointerId)return;
+        const saved=drag;drag=null;
+        const ids=Array.from(saved.parent.querySelectorAll('[data-todo-id]')).map(el=>el.dataset.todoId);
+        clearTarget();
+        if(saved.activated&&saved.targetId)reorderTodos(saved.id,saved.targetId,ids);
+      }
+      document.addEventListener('pointerup',drop);
+      document.addEventListener('pointercancel',()=>{drag=null;clearTarget();});
+      document.addEventListener('keydown',e=>{
+        const grip=e.target.closest('.todo-drag-handle');if(!grip)return;
+        const parent=grip.closest('#todoRail,#todoManagerList');if(!parent)return;
+        const isRail=parent===todoRail;
+        const previous=e.key===(isRail?'ArrowLeft':'ArrowUp'), next=e.key===(isRail?'ArrowRight':'ArrowDown');
+        if(!previous&&!next)return;
+        e.preventDefault();
+        const ids=Array.from(parent.querySelectorAll('[data-todo-id]')).map(el=>el.dataset.todoId);
+        const index=ids.indexOf(grip.dataset.todoDrag),newIndex=index+(previous?-1:1);
+        if(index<0||newIndex<0||newIndex>=ids.length)return;
+        const moved=grip.dataset.todoDrag;
+        if(reorderTodos(moved,ids[newIndex],ids)){
+          (parent.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`)||document.querySelector(`[data-todo-drag="${CSS.escape(moved)}"]`))?.focus({preventScroll:true});
+        }
+      });
+    })();
+    $('#todoResetRail').addEventListener('click',resetTodoOrder);
+    $('#todoResetOrder').addEventListener('click',resetTodoOrder);
     $('#todoAdd').addEventListener('click',()=>openTodoEdit());
     $('#todoViewAll').addEventListener('click',()=>openTodoManager());
     $('#todoManagerAdd').addEventListener('click',()=>openTodoEdit());
@@ -1688,7 +1841,7 @@
       e.preventDefault();const text=$('#todoText').value.trim();if(!text)return;
       const previous=todos.find(x=>x.id===editingTodoId);
       const value={id:previous?.id||makeId('todo'),text,label:$('#todoLabel').value.trim(),notes:$('#todoNotes').value.trim(),starred:$('#todoStar').checked,hidden:$('#todoHidden').checked,
-        createdAt:previous?.createdAt||new Date().toISOString(),completed:previous?.completed||false,
+        createdAt:previous?.createdAt||new Date().toISOString(),completed:previous?.completed||false,pinned:!!previous?.pinned,...(Number.isFinite(previous?.orderIndex)?{orderIndex:previous.orderIndex}:{}),
         ...(previous?.completedAt?{completedAt:previous.completedAt}:{})};
       if(previous)todos=todos.map(it=>it.id===previous.id?value:it);
       else if(todos.length<400)todos.push(value);
@@ -1749,6 +1902,12 @@
         console.assert(hint({d:0,h:1,m:0,x:0}).includes('1 hour'), 'hint hour singular');
         console.assert(hint({d:0,h:0,m:1,x:0}).includes('1 min'), 'hint minute singular');
         console.assert(hint({d:0,h:0,m:0,x:1}).includes('1 sec'), 'hint second singular');
+        const orderingFixture=[{id:'recent',text:'R',createdAt:'2026-10-20T00:00:00Z',completed:false,starred:true,hidden:false},{id:'old',text:'O',createdAt:'2026-10-10T00:00:00Z',completed:false,starred:false,hidden:false}];
+        console.assert(priorityTodos(orderingFixture)[0].id==='recent','starred tasks remain top priority');
+        console.assert(priorityTodos(orderingFixture.map(it=>({...it,starred:false})))[0].id==='old','date urgency orders older unfinished tasks first');
+        console.assert(orderedTodos([{...orderingFixture[0],orderIndex:0},{...orderingFixture[1],orderIndex:1}])[0].id==='recent','custom reorder persists');
+        console.assert(cleanTodos([{id:'long',text:'long',createdAt:'2026-10-10T00:00:00Z',notes:'x'.repeat(1800),pinned:true,orderIndex:2}])[0].notes.length===1800,'long to-do notes preserved');
+        console.assert(todoAgeClass('2026-10-01T00:00:00Z',new Date('2026-10-07T00:00:00Z').getTime())==='stale','older to-dos are red');
         // Link validation and cloud payload preservation tests
         console.assert(validWebUrl('https://example.com/docs') === 'https://example.com/docs', 'accepts HTTPS links');
         console.assert(validWebUrl('http://example.com/') === 'http://example.com/', 'accepts HTTP links');
