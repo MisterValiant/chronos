@@ -394,9 +394,10 @@
     .todo-tile.age-stale .todo-date,.todo-manager-entry.age-stale .todo-manager-meta:first-child{color:#ff99a8}
     .todo-age-elapsed{color:#fb8294;font-weight:700;white-space:nowrap;font-size:10px}
     /* Pinned is a compact action beside the star, never a footer-width competitor. */
-    .todo-unpin-btn{display:inline-flex;justify-content:center;align-items:center;flex:none;width:25px;height:25px;padding:4px;border-radius:8px;border:1px solid rgba(147,197,253,.35);background:rgba(147,197,253,.11);color:#addcff;cursor:pointer;transition:background .16s,border-color .16s,transform .16s}
-    .todo-unpin-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-    .todo-unpin-btn:hover{background:rgba(147,197,253,.22);border-color:rgba(147,197,253,.7);transform:translateY(-1px)}
+    /* The pin is a quiet priority indicator, not a square action button. */
+    .todo-unpin-btn{display:inline-flex;justify-content:center;align-items:center;flex:none;width:24px;height:27px;padding:2px;border:0;background:none;box-shadow:none;color:#9bcfff;cursor:pointer;transition:color .16s,transform .16s,filter .16s}
+    .todo-unpin-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .todo-unpin-btn:hover{background:none;color:#d7efff;filter:drop-shadow(0 0 5px rgba(112,191,255,.50));transform:translateY(-1px)}
     .todo-unpin-btn:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
     @media(prefers-reduced-motion:reduce){.todo-unpin-btn{transition:none}.todo-unpin-btn:hover{transform:none}}
     .todo-drag-handle{display:inline-flex;align-items:center;justify-content:center;flex:none;color:#94a6cb;background:rgba(147,197,253,.05);border:1px solid rgba(147,197,253,.15);border-radius:7px;padding:0;width:24px;height:26px;cursor:grab;touch-action:none;user-select:none;font-size:14px;letter-spacing:-2px}
@@ -451,7 +452,7 @@
       #todoRail .todo-foot-details{gap:6px}
       #todoRail .todo-foot-controls{gap:7px}
       #todoRail .todo-icon-btn[data-todo-action="edit"]{width:36px;height:36px}
-      #todoRail .todo-unpin-btn{width:33px;height:33px}
+      #todoRail .todo-unpin-btn{width:29px;height:33px;padding:0;border:0;background:none}
       .todo-drag-handle{display:none!important}
       .todo-mobile-moves{display:inline-flex;align-items:center;gap:4px;flex:none}
       .todo-mobile-move{appearance:none;width:36px;height:36px;border-radius:9px;border:1px solid rgba(147,197,253,.23);
@@ -521,7 +522,7 @@
     <hr class="separator"/>
     <section class="section todo-section" aria-labelledby="todoTitle">
       <div class="todo-heading">
-        <div class="section-head"><div><h2 class="section-title" id="todoTitle">To-do list</h2><p class="section-note">Starred first, then oldest · dragged order takes precedence</p></div><span class="section-count" id="todoCount">0 active</span></div>
+        <div class="section-head"><div><h2 class="section-title" id="todoTitle">To-do list</h2><p class="section-note">Starred first, oldest first · pin to reorder within starred</p></div><span class="section-count" id="todoCount">0 active</span></div>
         <div class="todo-controls"><button class="pill todo-reset-inline" id="todoResetRail" type="button" title="Return to automatic age order" hidden>Reset order</button><button class="pill" id="todoAdd" type="button">+ To-do</button><button class="pill" id="todoViewAll" type="button">View all &amp; history</button></div>
       </div>
       <div class="todo-rail" id="todoRail" role="list" aria-label="Priority to-dos, scroll horizontally"></div>
@@ -596,10 +597,10 @@
         <button type="button" class="todo-tab" data-todo-tab="archive" aria-selected="false" role="tab">On-device archive</button>
       </div>
       <div id="todoManagerList" class="todo-manager-list" aria-live="polite"></div>
-      <p class="todo-manager-note">Drag the ⠿ grip to reorder (or use arrow keys on the grip). Manual order is synced and closes gaps when tasks finish; Reset order restores starred-first, oldest-first sorting. Completed visible items are retained in the cloud for 90 days, then moved to a local archive on this device when Chronos next opens or checks. Hidden to-dos are excluded from automatic cleanup. Archive entries are not synced. Old completed deadlines follow the same rule; unfinished deadlines are never auto-deleted.</p>
+      <p class="todo-manager-note">Drag the ⠿ grip to reorder (or use arrow keys on the grip). Star a task before reordering it. Pins set a custom position within starred tasks only. Starred tasks always stay ahead of ordinary tasks; Reset order restores age-based sorting. Completed visible items are retained in the cloud for 90 days, then moved to a local archive on this device when Chronos next opens or checks. Hidden to-dos are excluded from automatic cleanup. Archive entries are not synced. Old completed deadlines follow the same rule; unfinished deadlines are never auto-deleted.</p>
       <div class="rowline" style="justify-content:space-between;margin-top:14px">
         <button class="btn" id="todoExport" type="button">Export all to-dos &amp; archive</button>
-        <div class="rowline"><button class="btn" id="todoResetOrder" type="button" title="Return to age-based automatic order">Reset order</button><button class="btn" id="todoManagerAdd" type="button">+ New to-do</button></div>
+        <div class="rowline"><button class="btn" id="todoResetOrder" type="button" title="Reset pin order and sort starred/ordinary tasks by age">Reset order</button><button class="btn" id="todoManagerAdd" type="button">+ New to-do</button></div>
       </div>
     </div>
   </div>
@@ -943,12 +944,26 @@
     let todos=readArray(TODO_STORAGE,cleanTodos);
     let localArchive=readArray(TODO_ARCHIVE_STORAGE,cleanArchive);
     function saveTodos(){todos=cleanTodos(todos);storeArray(TODO_STORAGE,todos);}
-    function ageSort(a,b){
-      // Starred tasks stay highest priority; within each priority tier, older unfinished tasks are more urgent.
-      return Number(b.starred)-Number(a.starred) || new Date(a.createdAt)-new Date(b.createdAt) || a.id.localeCompare(b.id);
+    // Priority contract: starred > ordinary. Pinning changes an item's RELATIVE
+    // position only within the starred tier, never across the tier boundary.
+    function dateSort(a,b){return new Date(a.createdAt)-new Date(b.createdAt)||a.id.localeCompare(b.id);}
+    function ageSort(a,b){return Number(b.starred)-Number(a.starred)||dateSort(a,b);}
+    function todoOrderScope(it,source=todos){
+      // Keep active, completed and hidden lists separate, as before.
+      return it.hidden ? source.filter(x=>x.hidden)
+        : it.completed ? source.filter(x=>x.completed&&!x.hidden)
+        : source.filter(x=>!x.completed&&!x.hidden);
     }
-    // Legacy Chronos saved only the numeric slots of individually pinned items.
-    // Preserve that ordering once when upgrading old local/cloud records.
+    function orderedTodos(list){
+      const starred=list.filter(it=>it.starred),normal=list.filter(it=>!it.starred).sort(dateSort);
+      const manual=starred.some(it=>it.pinned&&Number.isFinite(it.orderIndex));
+      if(!manual)return starred.sort(dateSort).concat(normal);
+      const ranked=starred.filter(it=>Number.isFinite(it.orderIndex))
+        .sort((a,b)=>a.orderIndex-b.orderIndex||dateSort(a,b));
+      const unranked=starred.filter(it=>!Number.isFinite(it.orderIndex)).sort(dateSort);
+      return ranked.concat(unranked,normal);
+    }
+    function priorityTodos(source=todos){return orderedTodos(source.filter(it=>!it.completed&&!it.hidden));}
     function legacyOrderedTodos(list){
       const automatic=[...list].sort(ageSort);
       const pinned=automatic.filter(it=>it.pinned&&Number.isFinite(it.orderIndex))
@@ -960,62 +975,74 @@
       }
       return result;
     }
-    function todoOrderScope(it,source=todos){
-      // Active, completed and hidden views have independent drag sequences.
-      return it.hidden ? source.filter(x=>x.hidden)
-        : it.completed ? source.filter(x=>x.completed&&!x.hidden)
-        : source.filter(x=>!x.completed&&!x.hidden);
-    }
     function upgradeLegacyTodoOrder(){
-      let upgraded=false;
+      // Older Chronos let a pinned task exist without a star, and stored rank
+      // across ordinary tasks. Auto-star old pinned items so user intent is kept.
+      let changed=false;
       const scopes=[todos.filter(it=>!it.completed&&!it.hidden),
         todos.filter(it=>it.completed&&!it.hidden),todos.filter(it=>it.hidden)];
       for(const scope of scopes){
-        const hasPin=scope.some(it=>it.pinned&&Number.isFinite(it.orderIndex));
-        if(!hasPin || scope.every(it=>Number.isFinite(it.orderIndex)))continue;
-        legacyOrderedTodos(scope).forEach((it,index)=>{it.orderIndex=index;});
-        upgraded=true;
+        const oldPinExists=scope.some(it=>it.pinned&&Number.isFinite(it.orderIndex));
+        // Recover the previous complete relative order BEFORE changing priorities.
+        const fullyRanked=scope.every(it=>Number.isFinite(it.orderIndex));
+        const original=oldPinExists
+          ?(fullyRanked?[...scope].sort((a,b)=>a.orderIndex-b.orderIndex||ageSort(a,b)):legacyOrderedTodos(scope))
+          :[...scope].sort(ageSort);
+        for(const it of scope){
+          if(it.pinned&&!it.starred){it.starred=true;changed=true;}
+        }
+        const stars=original.filter(it=>it.starred);
+        const manual=stars.some(it=>it.pinned);
+        if(manual){
+          stars.forEach((it,index)=>{
+            if(it.orderIndex!==index){it.orderIndex=index;changed=true;}
+          });
+        }else{
+          stars.forEach(it=>{if(Number.isFinite(it.orderIndex)){delete it.orderIndex;changed=true;}});
+        }
+        scope.filter(it=>!it.starred).forEach(it=>{
+          if(it.pinned){it.pinned=false;changed=true;}
+          if(Number.isFinite(it.orderIndex)){delete it.orderIndex;changed=true;}
+        });
       }
-      return upgraded;
+      return changed;
     }
-    function orderedTodos(list){
-      const automatic=[...list].sort(ageSort);
-      // No manual pins: normal star-first, oldest-first priority.
-      if(!automatic.some(it=>it.pinned&&Number.isFinite(it.orderIndex)))return automatic;
-      const ranked=automatic.filter(it=>Number.isFinite(it.orderIndex))
-        .sort((a,b)=>a.orderIndex-b.orderIndex||ageSort(a,b));
-      const unranked=automatic.filter(it=>!Number.isFinite(it.orderIndex));
-      // Read-only fallback for older pinned-slot data; upgrading will save a
-      // complete manual sequence to every active record, including non-pins.
-      if(unranked.length && ranked.every(it=>it.pinned))return legacyOrderedTodos(list);
-      // Manual order is now a sequence, NOT fixed slots: removing or completing
-      // an item closes the gap without promoting a starred/automatic task over
-      // a pin that had been dragged ahead of it.
-      return ranked.concat(unranked);
-    }
-    function priorityTodos(source=todos){return orderedTodos(source.filter(it=>!it.completed && !it.hidden));}
-    // Run the migration once for local legacy documents, before any completion.
     if(upgradeLegacyTodoOrder())saveTodos();
-    function resetTodoOrder(){todos.forEach(it=>{delete it.orderIndex;it.pinned=false;});saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});playSound('update');}
-    function appendToManualOrder(it){
+    function resetTodoOrder(){
+      todos.forEach(it=>{delete it.orderIndex;it.pinned=false;});
+      saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});playSound('update');
+    }
+    function insertStarInManualOrder(it){
+      // Newly starred items enter at their normal date-based position. Existing
+      // pinned starred tasks retain their relative order; no fixed slots.
       const scope=todoOrderScope(it).filter(other=>other.id!==it.id);
-      if(!scope.some(other=>other.pinned&&Number.isFinite(other.orderIndex)))return;
-      it.orderIndex=scope.reduce((max,other)=>Number.isFinite(other.orderIndex)?Math.max(max,other.orderIndex):max,-1)+1;
+      const stars=orderedTodos(scope).filter(other=>other.starred);
+      if(!it.starred){it.pinned=false;delete it.orderIndex;return;}
+      if(!stars.some(other=>other.pinned)||!stars.length){
+        if(!it.pinned){delete it.orderIndex;return;}
+      }
+      const insertAt=stars.findIndex(other=>dateSort(it,other)<0);
+      stars.splice(insertAt<0?stars.length:insertAt,0,it);
+      stars.forEach((item,index)=>{item.orderIndex=index;});
+    }
+    function appendToManualOrder(it){insertStarInManualOrder(it);}
+    function setTodoStar(it,star){
+      if(it.starred===star)return;
+      it.starred=star;
+      if(!star){it.pinned=false;delete it.orderIndex;}
+      else{it.pinned=false;insertStarInManualOrder(it);}
     }
     function unpinTodo(it){
-      const scope=todoOrderScope(it);
-      const before=orderedTodos(scope);
+      if(!it.starred||!it.pinned)return;
+      const scope=todoOrderScope(it),before=orderedTodos(scope).filter(x=>x.starred);
       const originalPosition=before.findIndex(x=>x.id===it.id);
       it.pinned=false;
-      if(!scope.some(x=>x.pinned)){
-        // Last pin released: go back to normal star/date sorting.
-        scope.forEach(x=>delete x.orderIndex);
+      if(!scope.some(x=>x.starred&&x.pinned)){
+        scope.forEach(x=>{delete x.orderIndex;});
         return;
       }
       const rest=before.filter(x=>x.id!==it.id);
-      // Keep other pinned items and the tasks they outrank in exactly their
-      // present order. Reinsert this single unpinned item automatically *within*
-      // its neighboring pinned anchors, without moving either anchor.
+      // Reinsert by age only BETWEEN surrounding pinned starred anchors.
       let lower=0,upper=rest.length;
       for(let i=0;i<rest.length;i++){
         if(!rest[i].pinned)continue;
@@ -1023,29 +1050,24 @@
         else{upper=i;break;}
       }
       let position=lower;
-      for(let i=lower;i<upper;i++){
-        if(ageSort(rest[i],it)<=0)position=i+1;
-      }
+      for(let i=lower;i<upper;i++)if(dateSort(rest[i],it)<=0)position=i+1;
       rest.splice(position,0,it);
-      rest.forEach((x,index)=>{x.orderIndex=index;});
+      rest.forEach((task,index)=>{task.orderIndex=index;});
     }
     function reorderTodos(dragId,targetId,visibleIds){
       if(!dragId||dragId===targetId||!visibleIds.includes(dragId)||!visibleIds.includes(targetId))return false;
       const moved=todos.find(it=>it.id===dragId),target=todos.find(it=>it.id===targetId);
-      if(!moved||!target)return false;
+      if(!moved?.starred||!target?.starred)return false;
       const scope=todoOrderScope(moved);
       if(!scope.some(it=>it.id===targetId))return false;
-      // Use the ENTIRE list, not just the ten visible dashboard tiles. This
-      // preserves off-screen cards and existing manual priorities after a drop.
-      const sequence=orderedTodos(scope);
+      const sequence=orderedTodos(scope).filter(it=>it.starred);
       const from=sequence.findIndex(it=>it.id===dragId),to=sequence.findIndex(it=>it.id===targetId);
       if(from<0||to<0)return false;
       sequence.splice(from,1);
-      sequence.splice(to,0,moved); // same drop semantics as before
+      sequence.splice(to,0,moved);
       moved.pinned=true;
-      // Store every item's relative rank, so completion/deletion simply removes
-      // that item, while all remaining items keep the same precedence.
       sequence.forEach((it,index)=>{it.orderIndex=index;});
+      scope.filter(it=>!it.starred).forEach(it=>{it.pinned=false;delete it.orderIndex;});
       saveTodos();renderTodos();cloudSave(load()??[],true).catch(()=>{});playSound('open');return true;
     }
     const todoFmt = stamp => new Date(stamp).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
@@ -1099,20 +1121,23 @@
     function todoAgeDays(createdAt,now=Date.now()){return Math.max(0,Math.floor((now-new Date(createdAt).getTime())/864e5));}
     function todoTileClass(it){return `age-${todoAgeClass(it.createdAt)}${it.starred?' starred':''}`;}
     function todoAgeElapsed(it){return todoAgeClass(it.createdAt)==='stale'?`<span class="todo-age-elapsed">(${todoAgeDays(it.createdAt)} days)</span>`:'';}
-    function todoUnpinButton(it){return it.pinned?`<button type="button" class="todo-unpin-btn" data-todo-action="unpin" title="Unpin and return to automatic order" aria-label="Unpin ${esc(it.text)} and return to automatic order"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-3 1-3.5 3.5v3L12 18l-6-6 2.5-2.5h3L15 6zM4 20l5.5-5.5"/></svg></button>`:'';}
-    function todoDragHandle(it){return `<button type="button" class="todo-drag-handle" data-todo-drag="${esc(it.id)}" title="Drag to reorder (or use arrow keys)" aria-label="Reorder ${esc(it.text)} with drag or arrow keys">⠿</button>`;}
+    function todoUnpinButton(it){return it.starred&&it.pinned?`<button type="button" class="todo-unpin-btn" data-todo-action="unpin" title="Unpin and return to automatic order" aria-label="Unpin ${esc(it.text)} and return to automatic order"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5-3 1-3.5 3.5v3L12 18l-6-6 2.5-2.5h3L15 6zM4 20l5.5-5.5"/></svg></button>`:'';}
+    function todoDragHandle(it){return it.starred?`<button type="button" class="todo-drag-handle" data-todo-drag="${esc(it.id)}" title="Drag to reorder (or use arrow keys)" aria-label="Reorder ${esc(it.text)} with drag or arrow keys">⠿</button>`:'';}
     // Accessible manual position buttons on phones, so touch does not need drag and scroll.
     function todoMobileMoves(it,list){
       const index=list.findIndex(x=>x.id===it.id),last=list.length-1;
-      if(index<0)return '';
+      if(index<0||!it.starred)return '';
+      const ranked=list.filter(task=>task.starred);
+      const starredIndex=ranked.findIndex(task=>task.id===it.id);
+      if(ranked.length<2||starredIndex<0)return '';
       return `<span class="todo-mobile-moves" aria-label="Move task">
-        <button type="button" class="todo-mobile-move" data-todo-action="move-up" aria-label="Move ${esc(it.text)} up" title="Move up"${index===0?' disabled':''}>↑</button>
-        <button type="button" class="todo-mobile-move" data-todo-action="move-down" aria-label="Move ${esc(it.text)} down" title="Move down"${index===last?' disabled':''}>↓</button>
+        <button type="button" class="todo-mobile-move" data-todo-action="move-up" aria-label="Move ${esc(it.text)} up" title="Move up"${starredIndex===0?' disabled':''}>↑</button>
+        <button type="button" class="todo-mobile-move" data-todo-action="move-down" aria-label="Move ${esc(it.text)} down" title="Move down"${starredIndex===ranked.length-1?' disabled':''}>↓</button>
       </span>`;
     }
     function moveTodoByStep(id,delta){
-      const it=todos.find(x=>x.id===id);if(!it)return false;
-      const sequence=orderedTodos(todoOrderScope(it));
+      const it=todos.find(x=>x.id===id);if(!it||!it.starred)return false;
+      const sequence=orderedTodos(todoOrderScope(it)).filter(task=>task.starred);
       const index=sequence.findIndex(x=>x.id===id),other=sequence[index+delta];
       return other?reorderTodos(id,other.id,sequence.map(x=>x.id)):false;
     }
@@ -1968,7 +1993,7 @@
       if(action==='visibility'){
         const wasHidden=it.hidden;
         it.hidden=!it.hidden;
-        if(wasHidden&&!it.completed)appendToManualOrder(it);
+        if(wasHidden&&!it.completed&&it.starred)appendToManualOrder(it);
         persistTodoChanges();return;
       }
       if(action==='unpin'){
@@ -1977,13 +2002,13 @@
         persistTodoChanges();return;
       }
       if(action==='star'){
-        it.starred=!it.starred;persistTodoChanges();return;
+        setTodoStar(it,!it.starred);persistTodoChanges();return;
       }
       if(action==='complete'){
         if(finishingTodos.has(id))return;
         if(!it.completed){finishTodoAfterAnimation(it);return;}
         it.completed=false;delete it.completedAt;
-        // A restored task rejoins at the end of any manually arranged active list.
+        // A restored starred task rejoins its priority tier by date while pins keep their relative order.
         if(!it.hidden)appendToManualOrder(it);
         persistTodoChanges('update',false);
       }
@@ -2019,11 +2044,12 @@
         const x=Math.max(rect.left+5,Math.min(rect.right-5,drag.x));
         const y=Math.max(rect.top+5,Math.min(rect.bottom-5,drag.y));
         let target=document.elementFromPoint(x,y)?.closest('[data-todo-id]');
+        if(target && !todos.find(it=>it.id===target.dataset.todoId)?.starred)target=null;
         if(!target||!parent.contains(target)||target.dataset.todoId===drag.id){
           // While the list scrolls under a stationary pointer, select the closest
           // VISIBLE neighbor. Avoid selecting the 'View all' tile or the dragged card.
           const candidates=[...parent.querySelectorAll('[data-todo-id]')].filter(el=>{
-            if(el.dataset.todoId===drag.id)return false;
+            if(el.dataset.todoId===drag.id||!todos.find(it=>it.id===el.dataset.todoId)?.starred)return false;
             const r=el.getBoundingClientRect();
             return rail ? r.right>rect.left+2 && r.left<rect.right-2 : r.bottom>rect.top+2 && r.top<rect.bottom-2;
           });
@@ -2143,10 +2169,18 @@
       const value={id:previous?.id||makeId('todo'),text,label:$('#todoLabel').value.trim(),notes:$('#todoNotes').value.trim(),starred:$('#todoStar').checked,hidden:$('#todoHidden').checked,
         createdAt:previous?.createdAt||new Date().toISOString(),completed:previous?.completed||false,pinned:!!previous?.pinned,...(Number.isFinite(previous?.orderIndex)?{orderIndex:previous.orderIndex}:{}),
         ...(previous?.completedAt?{completedAt:previous.completedAt}:{})};
-      if(previous)todos=todos.map(it=>it.id===previous.id?value:it);
-      else if(todos.length<400){
-        appendToManualOrder(value);
+      if(previous){
+        const starChanged=previous.starred!==value.starred;
+        const scopeChanged=previous.hidden!==value.hidden;
+        todos=todos.map(it=>it.id===previous.id?value:it);
+        if(!value.starred){value.pinned=false;delete value.orderIndex;}
+        else if(starChanged||scopeChanged){
+          if(starChanged)value.pinned=false;
+          insertStarInManualOrder(value);
+        }
+      }else if(todos.length<400){
         todos.push(value);
+        if(value.starred)insertStarInManualOrder(value);
       }
       else {alert('Maximum 400 to-dos including completed tasks. Export or clean older entries.');return;}
       closeTodoEdit();persistTodoChanges(previous?'update':'create');
@@ -2207,47 +2241,36 @@
         console.assert(hint({d:0,h:0,m:1,x:0}).includes('1 min'), 'hint minute singular');
         console.assert(hint({d:0,h:0,m:0,x:1}).includes('1 sec'), 'hint second singular');
         const orderingFixture=[{id:'recent',text:'R',createdAt:'2026-10-20T00:00:00Z',completed:false,starred:true,hidden:false},{id:'old',text:'O',createdAt:'2026-10-10T00:00:00Z',completed:false,starred:false,hidden:false}];
-        console.assert(priorityTodos(orderingFixture)[0].id==='recent','starred tasks remain top priority');
-        console.assert(orderedTodos([{...orderingFixture[0],orderIndex:1},{...orderingFixture[1],orderIndex:0,pinned:true}])[0].id==='old','manual pin outranks star');
-        console.assert(todoMobileMoves(orderingFixture[0],orderingFixture).includes('move-down'),'mobile move buttons exist');
-        console.assert(todoMobileMoves(orderingFixture[0],orderingFixture).includes('disabled'),'first task cannot move higher');
-        console.assert(priorityTodos(orderingFixture.map(it=>({...it,starred:false})))[0].id==='old','date urgency orders older unfinished tasks first');
-        console.assert(orderedTodos([{...orderingFixture[0],orderIndex:0},{...orderingFixture[1],orderIndex:1}])[0].id==='recent','custom reorder persists');
-        console.assert(cleanTodos([{id:'long',text:'long',createdAt:'2026-10-10T00:00:00Z',notes:'x'.repeat(1800),pinned:true,orderIndex:2}])[0].notes.length===1800,'long to-do notes preserved');
-        // Regression: unpinned to-dos resume automatic priority/date order,
-        // without undoing a different task's manually chosen position.
+        console.assert(priorityTodos(orderingFixture)[0].id==='recent','starred above ordinary');
+        console.assert(orderedTodos([{...orderingFixture[0],orderIndex:1},{...orderingFixture[1],orderIndex:0,pinned:false}])[0].id==='recent','old ordinary rank never overrides star');
+        console.assert(priorityTodos(orderingFixture.map(it=>({...it,starred:false})))[0].id==='old','ordinary tasks oldest first');
+        console.assert(cleanTodos([{id:'long',text:'long',createdAt:'2026-10-10T00:00:00Z',notes:'x'.repeat(1800),pinned:true,starred:true,orderIndex:2}])[0].notes.length===1800,'long to-do notes preserved');
         const pinCases=[
-          {id:'p',text:'Pinned',createdAt:'2026-10-20T00:00:00Z',pinned:true,orderIndex:1,starred:false},
-          {id:'a',text:'Old',createdAt:'2026-10-01T00:00:00Z',pinned:false,orderIndex:0,starred:false},
-          {id:'b',text:'New',createdAt:'2026-10-15T00:00:00Z',pinned:false,orderIndex:2,starred:false}
+          {id:'first',text:'First',createdAt:'2026-10-01T00:00:00Z',starred:true,pinned:false,orderIndex:0,completed:false,hidden:false},
+          {id:'pin',text:'Pin',createdAt:'2026-10-20T00:00:00Z',starred:true,pinned:true,orderIndex:1,completed:false,hidden:false},
+          {id:'third',text:'Third',createdAt:'2026-10-15T00:00:00Z',starred:true,pinned:false,orderIndex:2,completed:false,hidden:false},
+          {id:'ordinary',text:'Ordinary',createdAt:'2026-09-01T00:00:00Z',starred:false,pinned:false,completed:false,hidden:false}
         ];
-        console.assert(orderedTodos(pinCases).map(it=>it.id).join(',')==='a,p,b','legacy pin position is readable for migration');
-        console.assert(orderedTodos(pinCases.map(it=>it.id==='p'?{...it,pinned:false,orderIndex:undefined}:it)).map(it=>it.id).join(',')==='a,b,p','unpin returns to automatic creation-date sorting');
-        console.assert(todoUnpinButton(pinCases[0]).includes('data-todo-action="unpin"')&&!todoUnpinButton(pinCases[1]),'only pinned tasks have unpin action');
-        // Regression: manually arranged tasks form a RELATIVE sequence. Removing
-        // the first pin must not let a starred task overtake the remaining pins.
-        const sequenceFixture=[
-          {id:'first',text:'First',createdAt:'2026-10-15T00:00:00Z',pinned:true,orderIndex:0,starred:false,hidden:false,completed:false},
-          {id:'second',text:'Second',createdAt:'2026-10-16T00:00:00Z',pinned:true,orderIndex:1,starred:false,hidden:false,completed:false},
-          {id:'third',text:'Third',createdAt:'2026-10-17T00:00:00Z',pinned:true,orderIndex:2,starred:false,hidden:false,completed:false},
-          {id:'star',text:'Starred',createdAt:'2026-10-01T00:00:00Z',pinned:false,orderIndex:3,starred:true,hidden:false,completed:false},
-          {id:'normal',text:'Normal',createdAt:'2026-10-02T00:00:00Z',pinned:false,orderIndex:4,starred:false,hidden:false,completed:false}
-        ];
-        console.assert(orderedTodos(sequenceFixture).map(x=>x.id).join(',')==='first,second,third,star,normal','manual order wins over star');
-        console.assert(orderedTodos(sequenceFixture.filter(x=>x.id!=='first')).map(x=>x.id).join(',')==='second,third,star,normal','completing first pin closes gap without overtaking');
-        console.assert(orderedTodos(sequenceFixture.filter(x=>x.id!=='first'&&x.id!=='second')).map(x=>x.id).join(',')==='third,star,normal','multiple completions preserve relative order');
-        console.assert(orderedTodos(sequenceFixture.filter(x=>x.id!=='second')).map(x=>x.id).join(',')==='first,third,star,normal','deleting middle pin preserves remaining rank');
-        console.assert(orderedTodos(sequenceFixture.filter(x=>x.id!=='second'&&x.id!=='star')).map(x=>x.id).join(',')==='first,third,normal','hiding non-pin preserves the other pins');
-        const lastPinReleased=sequenceFixture.map(x=>({...x,pinned:false}));
-        console.assert(orderedTodos(lastPinReleased)[0].id==='star','automatic star priority resumes when all pins removed');
-        const mixedOrder=sequenceFixture.map(x=>({...x}));
-        const unpinSecond=mixedOrder.find(x=>x.id==='second');
-        // Inject in local todo state only temporarily to test the unpin helper.
+        console.assert(orderedTodos(pinCases).map(x=>x.id).join(',')==='first,pin,third,ordinary','pin has its chosen position among starred; ordinary remains last');
+        console.assert(orderedTodos(pinCases.filter(x=>x.id!=='first')).map(x=>x.id).join(',')==='pin,third,ordinary','completing higher starred closes the gap');
+        console.assert(orderedTodos(pinCases.filter(x=>x.id!=='third')).map(x=>x.id).join(',')==='first,pin,ordinary','finishing a starred item does not promote ordinary above pin');
+        console.assert(orderedTodos(pinCases.filter(x=>x.id!=='first'&&x.id!=='third')).map(x=>x.id).join(',')==='pin,ordinary','a pin remains above every ordinary task');
+        console.assert(!todoUnpinButton(pinCases[0])&&!!todoUnpinButton(pinCases[1])&&!todoUnpinButton(pinCases[3]),'pin icon only visible for pinned starred items');
+        console.assert(!todoDragHandle(pinCases[3])&&!!todoDragHandle(pinCases[1]),'only starred items draggable');
+        console.assert(!todoMobileMoves(pinCases[3],pinCases)&&todoMobileMoves(pinCases[0],pinCases).includes('move-down'),'mobile move controls only for starred');
+        const unpinned=pinCases.map(x=>({...x,pinned:false}));
+        console.assert(orderedTodos(unpinned).map(x=>x.id).join(',')==='first,third,pin,ordinary','last unpin restores date sorting');
         const beforeUnpin=todos;
         try{
-          todos=mixedOrder;
-          unpinTodo(unpinSecond);
-          console.assert(orderedTodos(todos).filter(x=>x.pinned).map(x=>x.id).join(',')==='first,third','unpin one does not remove other pins');
+          todos=pinCases.map(it=>({...it}));
+          const selected=todos.find(it=>it.id==='pin');
+          unpinTodo(selected);
+          console.assert(!selected.pinned&&orderedTodos(todos).map(it=>it.id).join(',')==='first,third,pin,ordinary','individual unpin restores date order');
+          const newlyStarred=todos.find(it=>it.id==='ordinary');
+          setTodoStar(newlyStarred,true);
+          console.assert(priorityTodos().map(it=>it.id).join(',')==='ordinary,first,third,pin','new star immediately enters above ordinary tasks, by date');
+          setTodoStar(newlyStarred,false);
+          console.assert(priorityTodos().at(-1).id==='ordinary','removing star moves task to ordinary tier');
         }finally{todos=beforeUnpin;}
         console.assert(todoAgeClass('2026-10-01T00:00:00Z',new Date('2026-10-07T00:00:00Z').getTime())==='stale','older to-dos are red');
         // Link validation and cloud payload preservation tests
