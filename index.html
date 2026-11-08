@@ -474,9 +474,91 @@
       #grid .card .deadline{font-size:9px}
       #grid .card .status{font-size:9px}
     }
+
+    /* Chronos boot: green favicon clock, soft orbit, and a restrained entrance. */
+    #chronosBoot{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;
+      background:radial-gradient(ellipse 490px 400px at 50% 42%,rgba(50,90,110,.23),transparent 80%),
+      radial-gradient(ellipse 610px 440px at 53% 30%,rgba(63,58,133,.24),transparent 78%),#0d1126;
+      opacity:1;visibility:visible;transition:opacity .82s cubic-bezier(.22,.75,.3,1),visibility .82s;}
+    #chronosBoot.closing{opacity:0;visibility:hidden;pointer-events:none}
+    .chronos-boot-content{display:flex;align-items:center;flex-direction:column;gap:0;max-width:310px;width:100%;text-align:center}
+    .chronos-boot-mark{width:122px;height:122px;position:relative;display:grid;place-items:center;margin-bottom:17px;isolation:isolate}
+    .chronos-boot-mark:before,.chronos-boot-mark:after{content:'';position:absolute;border-radius:50%;inset:8px;pointer-events:none}
+    .chronos-boot-mark:before{background:conic-gradient(from 5deg,transparent 7%,rgba(110,231,183,.75) 28%,transparent 40%,rgba(147,197,253,.62) 74%,transparent 88%);
+      opacity:.8;filter:blur(.3px);animation:chronosBootOrbit 3.2s linear infinite}
+    .chronos-boot-mark:after{inset:17px;border:1px solid rgba(147,197,253,.16);box-shadow:0 0 30px rgba(110,231,183,.12),inset 0 0 18px rgba(110,231,183,.05)}
+    .chronos-boot-clock{width:83px;height:83px;z-index:1;overflow:visible;filter:drop-shadow(0 0 18px rgba(110,231,183,.25));animation:chronosBootFloat 2.2s ease-in-out infinite}
+    .chronos-boot-hand{transform-origin:32px 32px;transform-box:view-box;animation:chronosBootHands 3s linear infinite}
+    .chronos-boot-title{font-size:22px;line-height:1.35;letter-spacing:.2px;font-weight:800;color:#eef7ff;margin:0}
+    .chronos-boot-label{font-size:12px;line-height:1.5;color:#aabada;margin:8px 0 0;min-height:18px}
+    .chronos-boot-track{width:142px;height:3px;border-radius:12px;position:relative;overflow:hidden;background:rgba(147,197,253,.15);margin-top:19px}
+    .chronos-boot-track:after{content:'';position:absolute;inset:0;width:48%;border-radius:12px;background:linear-gradient(90deg,transparent,#6ee7b7,#93c5fd,transparent);animation:chronosBootTrack 1.6s ease-in-out infinite}
+    @keyframes chronosBootOrbit{to{transform:rotate(360deg)}}
+    @keyframes chronosBootHands{to{transform:rotate(360deg)}}
+    @keyframes chronosBootFloat{0%,100%{transform:translateY(1px) scale(.99)}50%{transform:translateY(-4px) scale(1.025)}}
+    @keyframes chronosBootTrack{from{transform:translateX(-120%)}to{transform:translateX(310%)}}
+    html.chronos-booting body > header,html.chronos-booting body > main,html.chronos-booting body > footer{opacity:.35;filter:blur(7px);transform:translateY(9px);pointer-events:none}
+    body > header,body > main,body > footer{transition:opacity .72s cubic-bezier(.2,.7,.2,1),filter .72s,transform .72s}
+    /* Small, non-blocking indication for background auth, cloud reads and saves. */
+    #sync{display:inline-flex;align-items:center;gap:7px;min-height:20px;transition:opacity .22s ease,color .22s}
+    .chronos-mini-spin{position:relative;display:inline-block;flex:none;width:15px;height:15px;border-radius:50%;
+      border:2px solid rgba(147,197,253,.20);border-top-color:#6ee7b7;border-right-color:#93c5fd;animation:chronosBootOrbit .8s linear infinite}
+    #chronosActivity{position:fixed;right:18px;bottom:18px;z-index:65;pointer-events:none;display:flex;align-items:center;gap:10px;
+      padding:10px 14px;border-radius:13px;border:1px solid rgba(147,197,253,.24);background:rgba(20,28,52,.92);
+      box-shadow:0 8px 24px rgba(0,0,0,.24);color:#d8e7ff;font-size:12px;font-weight:600;
+      backdrop-filter:blur(10px);opacity:0;visibility:hidden;transform:translateY(9px) scale(.98);
+      transition:opacity .26s ease,visibility .26s,transform .26s ease}
+    #chronosActivity.visible{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+    @media(max-width:640px){#chronosActivity{right:12px;bottom:max(12px,env(safe-area-inset-bottom));left:auto;max-width:calc(100vw - 24px)}
+    @media(prefers-reduced-motion:reduce){
+      #chronosBoot,.chronos-boot-clock,#chronosActivity,body > header,body > main,body > footer{transition-duration:.08s!important;animation:none!important}
+      .chronos-boot-mark:before,.chronos-boot-hand,.chronos-boot-track:after,.chronos-mini-spin{animation:none!important}
+      .chronos-boot-track:after{transform:none;width:100%;opacity:.7}
+    }
   </style>
 </head>
 <body>
+  <!-- Initial splash uses the same clock SVG as assets/favicon.svg; there is no extra image dependency. -->
+  <div id="chronosBoot" role="status" aria-live="polite" aria-label="Chronos is loading">
+    <div class="chronos-boot-content">
+      <div class="chronos-boot-mark" aria-hidden="true">
+        <svg class="chronos-boot-clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" focusable="false">
+          <defs><linearGradient id="chronosBootGreen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6ee7b7"/><stop offset="1" stop-color="#93c5fd"/></linearGradient></defs>
+          <circle cx="32" cy="32" r="28" fill="url(#chronosBootGreen)"/>
+          <path class="chronos-boot-hand" d="M32 16v16l10 6" stroke="#081022" stroke-width="4" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <h2 class="chronos-boot-title">Chronos Dashboard</h2>
+      <p id="chronosBootLabel" class="chronos-boot-label">Bringing your moments into focus…</p>
+      <div class="chronos-boot-track" aria-hidden="true"></div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var splash=document.getElementById('chronosBoot');
+      document.documentElement.classList.add('chronos-booting');
+      var started=Date.now(),closed=false,pending=null;
+      function finish(){
+        if(closed||pending!==null)return;
+        pending=setTimeout(function(){
+          pending=null;
+          if(closed)return;
+          closed=true;
+          document.documentElement.classList.remove('chronos-booting');
+          splash.classList.add('closing');
+          splash.setAttribute('aria-hidden','true');
+          setTimeout(function(){splash.hidden=true;},900);
+        },Math.max(0,750-(Date.now()-started)));
+      }
+      window.ChronosBoot={finish:finish,message:function(str){
+        var label=document.getElementById('chronosBootLabel');
+        if(label&&!closed)label.textContent=str;
+      }};
+      // Never trap a user behind the splash if scripts, auth, or the network fail.
+      setTimeout(finish,4800);
+    })();
+  </script>
+
   <header>
     <div class="wrap">
       <div class="rowline">
@@ -658,6 +740,9 @@
   </div>
 
   <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+  <!-- Non-blocking activity display: only shown when an operation exceeds 260 ms. -->
+  <div id="chronosActivity" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"><span class="chronos-mini-spin" aria-hidden="true"></span><span id="chronosActivityText">Synchronizing…</span></div>
+
 
   <footer class="foot" aria-label="Chronos information">
     <a class="foot-credit" href="https://github.com/MisterValiant/chronos" target="_blank" rel="noopener noreferrer">Made with ❤ by MisterValiant</a>
@@ -675,6 +760,8 @@
     // Guard: Firebase globals must exist
     if(!(window.firebase && firebase.initializeApp)){
       console.error('Firebase SDK not loaded');
+      window.ChronosBoot?.message('Offline or connection unavailable');
+      window.ChronosBoot?.finish();
       return;
     }
 
@@ -811,7 +898,8 @@
     const TODO_ARCHIVE_STORAGE = 'chronos_completed_archive_v1';
     const RETENTION_DAYS = 90;
     let editing = -1, completeMode = 'complete';
-    let deleteArmed = false; let syncing = false, lastSync = null, syncError = null;
+    let deleteArmed = false; let syncing = false, cloudLoading = false, authWorking = false, lastSync = null, syncError = null;
+    let activityTimer = null;
 
     // Local storage helpers
     const load = () => { try { const r = localStorage.getItem(STORAGE); return r ? JSON.parse(r) : null; } catch(_) { return null; } };
@@ -1225,11 +1313,30 @@
 
     // Cloud sync helpers (Firestore)
     function hhmm(t){ try{ return new Date(t).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch(_){return '';} }
+    function updateActivity(isBusy,label){
+      const notice=$('#chronosActivity');
+      if(!notice)return;
+      const text=$('#chronosActivityText');
+      if(text)text.textContent=label||'Synchronizing…';
+      if(activityTimer!==null){clearTimeout(activityTimer);activityTimer=null;}
+      if(isBusy){
+        if(!notice.classList.contains('visible'))activityTimer=setTimeout(()=>{
+          notice.classList.add('visible');notice.setAttribute('aria-hidden','false');
+          activityTimer=null;
+        },260);
+      }else{
+        notice.classList.remove('visible');notice.setAttribute('aria-hidden','true');
+      }
+    }
     function updateSyncUI(){
       const u = auth.currentUser;
-      if(!syncEl) return;
+      if(!syncEl)return;
+      const busy=authWorking||cloudLoading||syncing;
+      updateActivity(busy,authWorking?'Signing in securely…':cloudLoading?'Loading your cloud dashboard…':'Saving changes…');
+      if(authWorking){syncEl.innerHTML='<span class="chronos-mini-spin" aria-hidden="true"></span> Connecting…';return;}
+      if(cloudLoading){syncEl.innerHTML='<span class="chronos-mini-spin" aria-hidden="true"></span> Loading…';return;}
       if(!u){ syncEl.innerHTML = '<span class="dot-sm"></span> Local only'; return; }
-      if(syncing){ syncEl.innerHTML = '<span class="dot-sm on"></span> Syncing...'; return; }
+      if(syncing){ syncEl.innerHTML = '<span class="chronos-mini-spin" aria-hidden="true"></span> Saving…'; return; }
       if(syncError){ 
         // Display the specific error for debugging
         const code = syncError.code || 'UNKNOWN';
@@ -2371,13 +2478,25 @@
     })();
 
     // Auth UI
-    signInBtn.addEventListener('click',()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()));
-    signOutBtn.addEventListener('click',()=>auth.signOut());
+    signInBtn.addEventListener('click',async()=>{
+      authWorking=true;syncError=null;updateSyncUI();
+      try{await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());}
+      catch(e){syncError=e;console.warn('Google sign-in did not complete',e);}
+      finally{authWorking=false;updateSyncUI();}
+    });
+    signOutBtn.addEventListener('click',async()=>{
+      authWorking=true;updateSyncUI();
+      try{await auth.signOut();}catch(e){syncError=e;console.warn('Sign out failed',e);}
+      finally{authWorking=false;updateSyncUI();}
+    });
     
     auth.onAuthStateChanged(async (u) => {
+        cloudLoading=!!u;
+        if(u)window.ChronosBoot?.message('Restoring your cloud workspace…');
         showUser(u);
         if (!u) {
-            updateSyncUI();
+            cloudLoading=false;updateSyncUI();
+            window.ChronosBoot?.finish();
             return;
         }
 
@@ -2424,8 +2543,11 @@
 
         } catch (e) {
             syncError = e;
-            updateSyncUI();
             console.warn('Cloud sync error:', e);
+        } finally {
+            cloudLoading=false;
+            updateSyncUI();
+            window.ChronosBoot?.finish();
         }
     });
   });
