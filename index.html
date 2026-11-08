@@ -509,7 +509,7 @@
       backdrop-filter:blur(10px);opacity:0;visibility:hidden;transform:translateY(9px) scale(.98);
       transition:opacity .26s ease,visibility .26s,transform .26s ease}
     #chronosActivity.visible{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
-    @media(max-width:640px){#chronosActivity{right:12px;bottom:max(12px,env(safe-area-inset-bottom));left:auto;max-width:calc(100vw - 24px)}
+    @media(max-width:640px){#chronosActivity{right:12px;bottom:max(12px,env(safe-area-inset-bottom));left:auto;max-width:calc(100vw - 24px)}}
     @media(prefers-reduced-motion:reduce){
       #chronosBoot,.chronos-boot-clock,#chronosActivity,body > header,body > main,body > footer{transition-duration:.08s!important;animation:none!important}
       .chronos-boot-mark:before,.chronos-boot-hand,.chronos-boot-track:after,.chronos-mini-spin{animation:none!important}
@@ -517,6 +517,13 @@
     }
 
     /* Mobile-only Chronos workspace refinements; desktop controls remain untouched. */
+    /* Keep dedicated mobile components out of all desktop/tablet layouts. */
+    #chronosMobileMenuToggle{display:none}
+    .chronos-mobile-logo{display:none;width:31px;height:31px;object-fit:contain}
+    #chronosMobileDrawer,#chronosMenuBackdrop,#chronosTodoFloat,#chronosTodoConfirm{display:none}
+    #chronosMobileDrawer img{max-width:38px;max-height:38px;object-fit:contain}
+    header .chronos-mark{width:38px;height:38px;max-width:38px;max-height:38px;display:block;flex:none}
+    @media(max-width:520px){header .chronos-mark{width:34px;height:34px}}
     .chronos-mobile-logo{display:none}
     #chronosMobileMenuToggle{display:none}
     #chronosMenuBackdrop,#chronosMobileDrawer,#chronosTodoFloat,#chronosTodoConfirm{display:none}
@@ -736,8 +743,8 @@
     </section>
   </main>
 
-  <button type="button" id="chronosTodoFloat" title="Go to to-dos" aria-label="Go to to-do list">
-    <span class="chronos-fab-glyph chronos-fab-jump" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 11 2 2 4-4M15 10h3M7 17h11"/></svg></span>
+  <button type="button" id="chronosTodoFloat" title="Jump to to-do list" aria-label="Jump to to-do list">
+    <span class="chronos-fab-glyph chronos-fab-jump" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 7.5 5 9l2.5-3M10.5 8h9M3.5 14 5 15.5l2.5-3M10.5 14.5h4"/><path d="M18 13v7m-3-3 3 3 3-3"/></svg></span>
     <span class="chronos-fab-glyph chronos-fab-add" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></span>
   </button>
   <div id="chronosTodoConfirm" role="dialog" aria-modal="true" aria-labelledby="chronosConfirmTitle" aria-hidden="true" hidden>
